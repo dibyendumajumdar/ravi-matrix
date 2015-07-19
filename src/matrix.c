@@ -100,3 +100,44 @@ bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B, bool transposeA,
 #endif
   return true;
 }
+
+void matrix_negate(matrix_t *A) {
+  const double *e = &A->data[A->m*A->n];
+  for (double *p = &A->data[0]; p != e; p++)
+    *p = -*p;
+}
+
+bool matrix_add(matrix_t *A, matrix_t *B) {
+  if (A->m != B->m || A->n != B->n) {
+    fprintf(stderr, "Matrix addition failed as matrices are not the same size\n");
+    assert(false);
+    return false;
+  }
+  const double *e = &A->data[A->m*A->n];
+  for (double *p = &A->data[0], *q = &B->data[0]; p != e; p++, q++)
+    *p += *q;
+  return true;
+}
+
+bool matrix_sub(matrix_t *A, matrix_t *B) {
+  if (A->m != B->m || A->n != B->n) {
+    fprintf(stderr, "Matrix subtraction failed as matrices are not the same size\n");
+    assert(false);
+    return false;
+  }
+  const double *e = &A->data[A->m*A->n];
+  for (double *p = &A->data[0], *q = &B->data[0]; p != e; p++, q++)
+    *p -= *q;
+  return true;
+}
+
+// Copy B into A
+void matrix_copy(matrix_t *A, matrix_t *B) {
+  if (A->m != B->m || A->n != B->n) {
+    fprintf(stderr, "Matrix subtraction failed as matrices are not the same size\n");
+    assert(false);
+  }
+  const double *e = &A->data[A->m*A->n];
+  for (double *p = &A->data[0], *q = &B->data[0]; p != e; p++, q++)
+    *p = *q;
+}

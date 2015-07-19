@@ -49,6 +49,18 @@ struct matrix_t {
 extern bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B,
                             bool transposeA, bool transposeB);
 
+// A = -A
+extern void matrix_negate(matrix_t *A);
+
+// A += B
+extern bool matrix_add(matrix_t *A, matrix_t *B);
+
+// A -= B
+extern bool matrix_sub(matrix_t *A, matrix_t *B);
+
+// A = copy(B)
+void matrix_copy(matrix_t *A, matrix_t *B);
+
 #ifdef __cplusplus
 }
 #endif

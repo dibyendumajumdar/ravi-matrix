@@ -36,6 +36,28 @@ assert(c[1] == 10.0)
 -- 76 25 11
 -- 27 89 51
 -- 18 60 32
+local m: number[] = { 76,27,18; 25,89,60; 11,51,32 }
+A = t.matrixx(3,3,m)
+assert(getmetatable(m).type == "Ravi matrix")
+
+-- 3*1 matrix bx
+-- 10
+-- 7
+-- 43
+local m: number[] = { 10, 7, 43 }
+bx = t.vectorx(m)
+assert(getmetatable(m).type == "Ravi matrix")
+
+C = A*bx;
+assert(#C == 3)
+assert(C[1] == 1408.0)
+assert(C[2] == 3086.0)
+assert(C[3] == 1976.0)
+
+-- 3x3 matrix A
+-- 76 25 11
+-- 27 89 51
+-- 18 60 32
 
 A = t.matrix { {76,27,18}, {25,89,60}, {11,51,32} }
 
@@ -50,5 +72,12 @@ assert(#C == 3)
 assert(C[1] == 1408.0)
 assert(C[2] == 3086.0)
 assert(C[3] == 1976.0)
+
+A = t.matrixx { {1,2,3}, {4,5,6} }
+B = t.matrixx { {-1,-2,-3}, {-4,-5,-6} }
+C = A+B
+for i = 1,#C do assert(C[i] == 0.0) end
+C = A-B
+for i = 1,#C do assert(C[i] == 2*A[i]) end
 
 print 'test OK'

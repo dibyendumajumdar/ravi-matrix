@@ -78,7 +78,7 @@ bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B, bool transposeA,
   int n = B->n;
   int k = A->n;
   if (C->m != m || C->n != n || B->m != k) {
-    fprintf(stderr, "dimensions are unexpected");
+    fprintf(stderr, "Dimensions are unexpected: A.m=%d, A.n=%d, B.m=%d, B.n=%d, C.m=%d, C.n=%d\n", A->m, A->n, B->m, B->n, C->m, C->n);
     assert(false);
     return false;
   }

@@ -32,5 +32,23 @@ c=a*b
 assert(#c == 1)
 assert(c[1] == 10.0)
 
+-- 3x3 matrix A
+-- 76 25 11
+-- 27 89 51
+-- 18 60 32
+
+A = t.matrix { {76,27,18}, {25,89,60}, {11,51,32} }
+
+-- 3*1 matrix bx
+-- 10
+-- 7
+-- 43
+bx = t.vector { 10, 7, 43 }
+
+C = A*bx;
+assert(#C == 3)
+assert(C[1] == 1408.0)
+assert(C[2] == 3086.0)
+assert(C[3] == 1976.0)
 
 print 'test OK'

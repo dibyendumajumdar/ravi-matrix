@@ -101,7 +101,7 @@ elseif(APPLE)
 else()
 endif()
 
-set (RAVIMATRIX_SRCS src/matrix.c)
+set (RAVIMATRIX_SRCS src/matrix.c src/ravi_matrix.c)
     
 if (MSVC)
   source_group("Source Files" FILES ${RAVIMATRIX_SRCS})

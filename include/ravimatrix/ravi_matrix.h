@@ -21,33 +21,51 @@
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
 
-#ifndef MATRIXLIB_H_
-#define MATRIXLIB_H_
+#ifndef RAVI_MATRIX_H_
+#define RAVI_MATRIX_H_
 
-#include <stdbool.h>
-#include <stdint.h>
+// This header file must be C compilable
+// No C++ artifacts allowed outside of #ifdef __cplusplus
+// Best to avoid
+
+#ifdef _MSC_VER
+
+#define DLLEXPORT __declspec(dllexport)
+#define DLLIMPORT __declspec(dllimport)
+
+#include <malloc.h>
+#define alloca _alloca
+
+#ifndef __cplusplus
+#define inline __inline
+#endif
+
+#else
+
+#define DLLEXPORT
+#define DLLIMPORT
+
+#include <alloca.h>
+
+#endif
+
+// When compiling the library DLL this
+// must be set, but when call the library
+// from another program this must not be set
+#ifdef RAVIMATRIX_IMPLEMENTATION
+#define API DLLEXPORT
+#else
+#define API DLLIMPORT
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <lua.h>
+#include <lauxlib.h>
+#include <lualib.h>
 
-/* We will cast the Ravi numeric arrays into this format
-* exploiting the fact that there is an extra element in Ravi
-* arrays
-* When not using Ravi this will be our vector or matrix
-* user defined type
-*/
-typedef struct matrix_t matrix_t;
-struct matrix_t {
-  int32_t m; /* rows */
-  int32_t n; /* columns */
-  double data[1];
-};
-
-// workhorse for matrix multiplication
-// C=A*B
-extern bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B,
-                            bool transposeA, bool transposeB);
+DLLEXPORT int luaopen_ravimatrix(lua_State *L);
 
 #ifdef __cplusplus
 }

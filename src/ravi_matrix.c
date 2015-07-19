@@ -428,7 +428,8 @@ static int Lua_matrix_mult(lua_State *L) {
 static int Lua_matrix_add(lua_State *L) {
   matrix_t *A = check_Lua_matrix(L, 1);
   matrix_t *B = check_Lua_matrix(L, 2);
-  luaL_argcheck(L, A->m == B->m && A->n == B->n, 1, "matrices are not the same size");
+  luaL_argcheck(L, A->m == B->m && A->n == B->n, 1,
+                "matrices are not the same size");
   matrix_t *matrix = alloc_Lua_matrix(L, A->m, B->n);
   matrix_copy(matrix, A);
   matrix_add(matrix, B);
@@ -438,13 +439,20 @@ static int Lua_matrix_add(lua_State *L) {
 static int Lua_matrix_sub(lua_State *L) {
   matrix_t *A = check_Lua_matrix(L, 1);
   matrix_t *B = check_Lua_matrix(L, 2);
-  luaL_argcheck(L, A->m == B->m && A->n == B->n, 1, "matrices are not the same size");
+  luaL_argcheck(L, A->m == B->m && A->n == B->n, 1,
+                "matrices are not the same size");
   matrix_t *matrix = alloc_Lua_matrix(L, A->m, B->n);
   matrix_copy(matrix, A);
   matrix_sub(matrix, B);
   return 1;
 }
 
+static int Lua_matrix_copy(lua_State *L) {
+  matrix_t *A = check_Lua_matrix(L, 1);
+  matrix_t *matrix = alloc_Lua_matrix(L, A->m, A->n);
+  matrix_copy(matrix, A);
+  return 1;
+}
 
 #if RAVI_ENABLED
 /* multiply two number array matrices */
@@ -463,7 +471,8 @@ static int Ravi_matrix_mult(lua_State *L) {
 static int Ravi_matrix_add(lua_State *L) {
   matrix_t *A = check_Ravi_matrix(L, 1);
   matrix_t *B = check_Ravi_matrix(L, 2);
-  luaL_argcheck(L, A->m == B->m && A->n == B->n, 1, "matrices are not the same size");
+  luaL_argcheck(L, A->m == B->m && A->n == B->n, 1,
+                "matrices are not the same size");
   matrix_t *matrix = alloc_Ravi_matrix(L, A->m, B->n, 0.0);
   matrix_copy(matrix, A);
   matrix_add(matrix, B);
@@ -473,12 +482,21 @@ static int Ravi_matrix_add(lua_State *L) {
 static int Ravi_matrix_sub(lua_State *L) {
   matrix_t *A = check_Ravi_matrix(L, 1);
   matrix_t *B = check_Ravi_matrix(L, 2);
-  luaL_argcheck(L, A->m == B->m && A->n == B->n, 1, "matrices are not the same size");
+  luaL_argcheck(L, A->m == B->m && A->n == B->n, 1,
+                "matrices are not the same size");
   matrix_t *matrix = alloc_Ravi_matrix(L, A->m, B->n, 0.0);
   matrix_copy(matrix, A);
   matrix_sub(matrix, B);
   return 1;
 }
+
+static int Ravi_matrix_copy(lua_State *L) {
+  matrix_t *A = check_Ravi_matrix(L, 1);
+  matrix_t *matrix = alloc_Ravi_matrix(L, A->m, A->n, 0.0);
+  matrix_copy(matrix, A);
+  return 1;
+}
+
 #endif
 
 // adds to an existing table
@@ -505,10 +523,12 @@ void create_library(lua_State *L, const struct luaL_Reg *regs) {
 }
 
 static const struct luaL_Reg mylib[] = {{"vector", make_Lua_vector},
-                                        {"vectorx", make_Ravi_vector},
-#if RAVI_ENABLED
                                         {"matrix", make_Lua_matrix},
+                                        {"copy", Lua_matrix_copy},
+#if RAVI_ENABLED
+                                        {"vectorx", make_Ravi_vector},
                                         {"matrixx", make_Ravi_matrix},
+                                        {"copyx", Ravi_matrix_copy},
 #endif
                                         {NULL, NULL}};
 

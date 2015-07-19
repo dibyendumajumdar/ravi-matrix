@@ -479,8 +479,6 @@ static int Ravi_matrix_sub(lua_State *L) {
   matrix_sub(matrix, B);
   return 1;
 }
-
-
 #endif
 
 // adds to an existing table

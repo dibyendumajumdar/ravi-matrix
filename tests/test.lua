@@ -76,8 +76,26 @@ assert(C[3] == 1976.0)
 A = t.matrixx { {1,2,3}, {4,5,6} }
 B = t.matrixx { {-1,-2,-3}, {-4,-5,-6} }
 C = A+B
+assert(#C == 6)
 for i = 1,#C do assert(C[i] == 0.0) end
 C = A-B
+assert(#C == 6)
 for i = 1,#C do assert(C[i] == 2*A[i]) end
+
+function comp(a: number[], b: number[])
+  for i = 1, #a do
+    if a[i] ~= b[i] then
+      return false
+    end
+  end
+  return true
+end
+--ravi.dumplua(comp)
+assert(ravi.compile(comp))
+
+Z=t.copyx(B)
+assert(comp(B, Z))
+
+--ravi.dumpllvmasm(comp)
 
 print 'test OK'

@@ -22,7 +22,7 @@
 ******************************************************************************/
 
 #include <ravimatrix/ravi_matrix.h>
-#include <ravimatrix/matrix.h>
+#include <ravimatrix/matrixlib.h>
 
 #define RAVI_ENABLED 1
 

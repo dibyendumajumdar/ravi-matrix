@@ -49,6 +49,10 @@ struct matrix_t {
 extern bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B,
                             bool transposeA, bool transposeB);
 
+extern double matrix_norm1(matrix_t *A);
+
+extern int matrix_lufactor(matrix_t *A);
+
 // A = -A
 extern void matrix_negate(matrix_t *A);
 

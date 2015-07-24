@@ -21,10 +21,29 @@
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
 
-#include <ravimatrix/matrix.h>
+#include <ravimatrix/matrixlib.h>
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+#ifdef _MSC_VER
+
+#include <malloc.h>
+#define alloca _alloca
+
+#ifndef __cplusplus
+#define inline __inline
+#endif
+
+#else
+
+#define DLLEXPORT
+#define DLLIMPORT
+
+#include <alloca.h>
+
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,6 +119,33 @@ bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B, bool transposeA,
 #endif
   return true;
 }
+
+double matrix_norm1(matrix_t *A) {
+  int m = A->m;
+  int n = A->n;
+  char norm[1] = { '1' };
+  double *a = &A->data[0];
+  int lda = m;
+  double *work = (double *)alloca(sizeof(double) * m);
+  return dlange_(&norm[0], &m, &n, a, &lda, work);
+}
+
+int matrix_lufactor(matrix_t *A) {
+  int m = A->m;
+  int n = A->n;
+
+  int info = 0;
+  int size = min(m, n);
+  int *ipiv = (int *)alloca(sizeof(int) * size);
+  for (int i = 0; i < size; i++) ipiv[i] = 0;
+
+  int lda = max(1, m);
+  dgetrf_(&m, &n, &A->data[0], &lda, ipiv, &info);
+  if (info != 0)
+    fprintf(stderr, "failed LU factorization of input matrix: %d\n", info);
+  return info;
+}
+
 
 void matrix_negate(matrix_t *A) {
   const double *e = &A->data[A->m*A->n];

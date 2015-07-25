@@ -26,24 +26,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifdef _MSC_VER
-
-#include <malloc.h>
-#define alloca _alloca
-
-#ifndef __cplusplus
-#define inline __inline
-#endif
-
-#else
-
-#define DLLEXPORT
-#define DLLIMPORT
-
-#include <alloca.h>
-
-#endif
+#include <string.h>
+#include <math.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,13 +75,17 @@ extern void ddisna_(char *job, int *m, int *n, double *d, double *sep,
 #endif
 
 // Internal workhorse for matrix multiplication
-bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B, bool transposeA,
-                     bool transposeB) {
+// workhorse for matrix multiplication
+// C=A*B
+static bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B,
+                            bool transposeA, bool transposeB) {
   int m = A->m;
   int n = B->n;
   int k = A->n;
   if (C->m != m || C->n != n || B->m != k) {
-    fprintf(stderr, "Dimensions are unexpected: A.m=%d, A.n=%d, B.m=%d, B.n=%d, C.m=%d, C.n=%d\n", A->m, A->n, B->m, B->n, C->m, C->n);
+    fprintf(stderr, "Dimensions are unexpected: A.m=%d, A.n=%d, B.m=%d, "
+                    "B.n=%d, C.m=%d, C.n=%d\n",
+            A->m, A->n, B->m, B->n, C->m, C->n);
     assert(false);
     return false;
   }
@@ -120,24 +108,25 @@ bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B, bool transposeA,
   return true;
 }
 
-double matrix_norm1(matrix_t *A) {
+static double matrix_norm1(matrix_t *A) {
   int m = A->m;
   int n = A->n;
-  char norm[1] = { '1' };
+  char norm[1] = {'1'};
   double *a = &A->data[0];
   int lda = m;
   double *work = (double *)alloca(sizeof(double) * m);
   return dlange_(&norm[0], &m, &n, a, &lda, work);
 }
 
-int matrix_lufactor(matrix_t *A) {
+static int matrix_lufactor(matrix_t *A) {
   int m = A->m;
   int n = A->n;
 
   int info = 0;
   int size = min(m, n);
   int *ipiv = (int *)alloca(sizeof(int) * size);
-  for (int i = 0; i < size; i++) ipiv[i] = 0;
+  for (int i = 0; i < size; i++)
+    ipiv[i] = 0;
 
   int lda = max(1, m);
   dgetrf_(&m, &n, &A->data[0], &lda, ipiv, &info);
@@ -146,44 +135,271 @@ int matrix_lufactor(matrix_t *A) {
   return info;
 }
 
-
-void matrix_negate(matrix_t *A) {
-  const double *e = &A->data[A->m*A->n];
+static void matrix_negate(matrix_t *A) {
+  const double *e = &A->data[A->m * A->n];
   for (double *p = &A->data[0]; p != e; p++)
     *p = -*p;
 }
 
-bool matrix_add(matrix_t *A, matrix_t *B) {
+static bool matrix_add(matrix_t *A, const matrix_t *B) {
   if (A->m != B->m || A->n != B->n) {
-    fprintf(stderr, "Matrix addition failed as matrices are not the same size\n");
+    fprintf(stderr,
+            "Matrix addition failed as matrices are not the same size\n");
     assert(false);
     return false;
   }
-  const double *e = &A->data[A->m*A->n];
-  for (double *p = &A->data[0], *q = &B->data[0]; p != e; p++, q++)
+  const double *e = &A->data[A->m * A->n];
+  double *p = &A->data[0];
+  const double *q = &B->data[0];
+  for (; p != e; p++, q++)
     *p += *q;
   return true;
 }
 
-bool matrix_sub(matrix_t *A, matrix_t *B) {
+static bool matrix_sub(matrix_t *A, const matrix_t *B) {
   if (A->m != B->m || A->n != B->n) {
-    fprintf(stderr, "Matrix subtraction failed as matrices are not the same size\n");
+    fprintf(stderr,
+            "Matrix subtraction failed as matrices are not the same size\n");
     assert(false);
     return false;
   }
-  const double *e = &A->data[A->m*A->n];
-  for (double *p = &A->data[0], *q = &B->data[0]; p != e; p++, q++)
+  const double *e = &A->data[A->m * A->n];
+  double *p = &A->data[0];
+  const double *q = &B->data[0];
+  for (; p != e; p++, q++)
     *p -= *q;
   return true;
 }
 
 // Copy B into A
-void matrix_copy(matrix_t *A, matrix_t *B) {
+static void matrix_copy(matrix_t *A, const matrix_t *B) {
   if (A->m != B->m || A->n != B->n) {
-    fprintf(stderr, "Matrix subtraction failed as matrices are not the same size\n");
+    fprintf(stderr,
+            "Matrix subtraction failed as matrices are not the same size\n");
     assert(false);
   }
-  const double *e = &A->data[A->m*A->n];
-  for (double *p = &A->data[0], *q = &B->data[0]; p != e; p++, q++)
+  const double *e = &A->data[A->m * A->n];
+  double *p = &A->data[0];
+  const double *q = &B->data[0];
+  for (; p != e; p++, q++)
     *p = *q;
 }
+
+static matrix_t *make_copy(const matrix_t *src) {
+  size_t msize = sizeof(int32_t) * 2 + sizeof(double) * src->m * src->n;
+  matrix_t *A = calloc(1, msize);
+  memcpy(A, src, msize);
+  return A;
+}
+
+// SVD
+// S must be matrix min(m,n) x 1 (vector)
+// U must be matrix m x m
+// V must be matrix n x n
+static bool matrix_svd(const matrix_t *input, matrix_t *S, matrix_t *U,
+                       matrix_t *V) {
+  double workSize, *work = NULL, *a = NULL;
+  int ldu, ldvt, lwork, info = -1, *iwork = NULL;
+  char job = 'A';
+  matrix_t *A = NULL;
+  int m = input->m, n = input->n, lda = m, s_size = max(1, min(m, n));
+  if (S->m != s_size || S->n != 1) {
+    fprintf(stderr, "The vector S must be a column vector of size %d\n",
+            s_size);
+    goto done;
+  }
+  if (U->m != m || U->n != m) {
+    fprintf(stderr, "The matrix U must be of size %dx%d\n", m, m);
+    goto done;
+  }
+  ldu = U->m;
+  if (V->m != n || V->n != n) {
+    fprintf(stderr, "The matrix V must be of size %dx%d\n", n, n);
+    goto done;
+  }
+  A = make_copy(input);
+  if (!A) {
+    fprintf(stderr, "Failed to allocate memory\n");
+    goto done;
+  }
+  a = &A->data[0];
+  ldvt = n;
+  workSize = 0;
+  work = &workSize;
+  lwork = -1; // we want to estimate workSize first
+  info = 0;
+  iwork = (int *)calloc(max(1, 8 * min(m, n)), sizeof(int));
+  if (iwork == NULL) {
+    fprintf(stderr, "Failed to allocate memory\n");
+    goto done;
+  }
+  dgesdd_(&job, &m, &n, a, &lda, &S->data[0], &U->data[0], &ldu, &V->data[0],
+          &ldvt, work, &lwork, iwork, &info);
+  if (info == 0) {
+    lwork = (int)workSize;
+    work = (double *)calloc(lwork, sizeof(double));
+    if (work) {
+      dgesdd_(&job, &m, &n, a, &lda, &S->data[0], &U->data[0], &ldu,
+              &V->data[0], &ldvt, work, &lwork, iwork, &info);
+    } else {
+      fprintf(stderr, "Failed to allocate memory\n");
+      info = -1;
+    }
+  } else {
+    fprintf(stderr, "Failed to estimate work size for SVD: info=%d\n", info);
+  }
+  if (info != 0) {
+    fprintf(stderr, "Failed to compute SVD: info=%d\n", info);
+  }
+done:
+  if (A)
+    free(A);
+  if (iwork)
+    free(iwork);
+  if (work && work != &workSize)
+    free(work);
+  return info == 0;
+}
+
+static bool matrix_estimate_rcond(const matrix_t *A, double *rcond) {
+  bool ok = false;
+  matrix_t *copy_of_A = make_copy(A);
+  double anorm = matrix_norm1(copy_of_A);
+  int info = matrix_lufactor(copy_of_A);
+  if (info != 0) {
+    fprintf(stderr, "failed to estimate rcond (LU factor failed)\n");
+    goto done;
+  }
+  char norm[] = {'1'};
+  int n = A->n;
+  double *a = &copy_of_A->data[0];
+  int lda = A->m;
+  if (lda < n) {
+    fprintf(stderr, "failed to estimate rcond (LDA < n)\n");
+    goto done;
+  }
+  double *work = (double *)alloca(sizeof(double) * n * 4);
+  int *iwork = (int *)alloca(sizeof(int) * n);
+  dgecon_(&norm[0], &n, a, &lda, &anorm, rcond, work, iwork, &info);
+  if (info != 0) {
+    fprintf(stderr, "failed to estimate rcond (DGECON failed)\n");
+    goto done;
+  }
+  ok = true;
+done:
+  if (copy_of_A)
+    free(copy_of_A);
+  return ok;
+}
+
+static bool matrix_solve(matrix_t *m, matrix_t *v) {
+  if (m->m == 0 || m->n == 0 || v->m == 0 || v->n != 1) {
+    fprintf(stderr, "The matrix A and vector y must have rows > 0\n");
+    assert(false);
+    return false;
+  }
+  if (m->m != m->n || m->m != v->m) {
+    fprintf(stderr, "The default solver only accepts n x n matrix\n");
+    assert(false);
+    return false;
+  }
+
+  int N = m->n;   // order of the matrix, number of rows of vector v
+  int nrhs = 1;   // number of columns of vector v
+  int lda = m->m; // leading dimension of the array for A (rows)
+  int *ipiv =
+      (int *)alloca(N * sizeof(int)); // return value: containing pivot indices
+  memset(ipiv, 0, N * sizeof(int));
+
+  int ldb = v->m; // leading dimension of vector v
+  int info = 0;   // return value: if 0 successful
+  double *A = &m->data[0];
+  double *b = &v->data[0];
+
+  dgesv_(&N, &nrhs, A, &lda, ipiv, b, &ldb, &info);
+
+  return info == 0;
+}
+
+static bool matrix_lsq_solve(matrix_t *A, matrix_t *y, double rcond, bool svd) {
+  if (A->m == 0 || A->n == 0 || y->m == 0 || y->n != 1) {
+    fprintf(stderr, "The matrix A and vector y must have rows > 0\n");
+    assert(false);
+    return false;
+  }
+  if (A->m < A->n) {
+    fprintf(stderr, "The matrix A must have rows >= cols\n");
+    assert(false);
+    return false;
+  }
+  if (y->m != A->m) {
+    fprintf(stderr, "The vector y must have rows = A.rows\n");
+    assert(false);
+    return false;
+  }
+  if (rcond <= 0) {
+    if (!matrix_estimate_rcond(A, &rcond))
+      return false;
+  }
+  int m = A->m;
+  int n = A->n;
+  int nrhs = 1; // number of columns in b
+  double *a = &A->data[0];
+  int lda = m;
+  double *b = &y->data[0];
+  int ldb = m;
+  int *jpvt = (int *)alloca(sizeof(int) * n);
+  memset(jpvt, 0, sizeof(int) * n);
+  double *s = (double *)alloca(sizeof(double) * max(m, n));
+  int lwork = -1;
+  int liwork = -1;
+  int rank = 0;
+  double temp = 0;
+  int info = 0;
+  // First estimate the work space required
+  if (svd) {
+    dgelsd_(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank, &temp, &lwork,
+            &liwork, &info);
+  } else {
+    dgelsy_(&m, &n, &nrhs, a, &lda, b, &ldb, jpvt, &rcond, &rank, &temp, &lwork,
+            &info);
+  }
+  if (info != 0) {
+    fprintf(stderr, "failed to estimate work space requirement\n");
+    return false;
+  }
+  // allocate work space
+  lwork = (int)temp;
+  double *ptr = (double *)calloc(lwork, sizeof(double));
+  assert(ptr);
+  // solve
+  if (svd) {
+    double minmn = max(1, min(m, n));
+    double smlsiz_plus_1 = 26.;
+    double nlvl = max(0, (int)(log(minmn / smlsiz_plus_1) / log(.2)) + 1);
+    liwork = (int)(3.0 * minmn * nlvl + 11.0 * minmn);
+    int *iwork_ptr = (int *)calloc(liwork, sizeof(int));
+    assert(iwork_ptr);
+    dgelsd_(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank, ptr, &lwork,
+            iwork_ptr, &info);
+    free(iwork_ptr);
+  } else {
+    dgelsy_(&m, &n, &nrhs, a, &lda, b, &ldb, jpvt, &rcond, &rank, ptr, &lwork,
+            &info);
+  }
+  free(ptr);
+  if (info != 0) {
+    fprintf(stderr, "failed to solve linear least squares problem\n");
+    return false;
+  }
+  return true;
+}
+
+/////////////////////////////////////////////////////
+
+static matrix_ops_t ops = {matrix_multiply, matrix_norm1, matrix_lufactor,
+                           matrix_estimate_rcond, matrix_svd, matrix_negate,
+                           matrix_add, matrix_sub, matrix_copy, matrix_solve,
+                           matrix_lsq_solve};
+
+const matrix_ops_t *ravi_matrix_get_implementation() { return &ops; }

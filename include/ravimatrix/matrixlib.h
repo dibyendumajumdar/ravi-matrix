@@ -27,6 +27,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <ravimatrix/conf.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,26 +46,47 @@ struct matrix_t {
   double data[1];
 };
 
-// workhorse for matrix multiplication
-// C=A*B
-extern bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B,
-                            bool transposeA, bool transposeB);
+typedef struct matrix_ops_t matrix_ops_t;
+struct matrix_ops_t {
+  // workhorse for matrix multiplication
+  // C=A*B
+  bool (*multiply)(matrix_t *C, matrix_t *A, matrix_t *B, bool transposeA,
+                   bool transposeB);
 
-extern double matrix_norm1(matrix_t *A);
+  double (*norm1)(matrix_t *A);
 
-extern int matrix_lufactor(matrix_t *A);
+  int (*lufactor)(matrix_t *A);
 
-// A = -A
-extern void matrix_negate(matrix_t *A);
+  bool (*estimate_rcond)(const matrix_t *A, double *rcond);
 
-// A += B
-extern bool matrix_add(matrix_t *A, matrix_t *B);
+  // SVD
+  // S must be matrix min(m,n) x 1 (vector)
+  // U must be matrix m x m
+  // V must be matrix n x n
+  bool (*svd)(const matrix_t *A, matrix_t *S, matrix_t *U, matrix_t *V);
 
-// A -= B
-extern bool matrix_sub(matrix_t *A, matrix_t *B);
+  // A = -A
+  void (*negate)(matrix_t *A);
 
-// A = copy(B)
-void matrix_copy(matrix_t *A, matrix_t *B);
+  // A += B
+  bool (*add)(matrix_t *A, const matrix_t *B);
+
+  // A -= B
+  bool (*sub)(matrix_t *A, const matrix_t *B);
+
+  // A = copy(B)
+  void (*copy)(matrix_t *A, const matrix_t *B);
+
+  // M must be a square matrix
+  // V a column vector with rows same as M
+  bool (*solve)(matrix_t *M, matrix_t *V);
+
+  // M must rows > columns
+  // V a column vector with rows same as M
+  bool (*lsq_solve)(matrix_t *M, matrix_t *V, double rcond, bool use_svd);
+};
+
+API const matrix_ops_t *ravi_matrix_get_implementation();
 
 #ifdef __cplusplus
 }

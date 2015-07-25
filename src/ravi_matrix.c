@@ -418,7 +418,8 @@ static int Lua_matrix_mult(lua_State *L) {
   matrix_t *B = check_Lua_matrix(L, 2);
   luaL_argcheck(L, A->n == B->m, 1, "matrices are not multiplicable");
   matrix_t *matrix = alloc_Lua_matrix(L, A->m, B->n);
-  if (!matrix_multiply(matrix, A, B, false, false)) {
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  if (!ops->multiply(matrix, A, B, false, false)) {
     luaL_error(L, "matrix multiplication failed");
     return 0;
   }
@@ -431,8 +432,9 @@ static int Lua_matrix_add(lua_State *L) {
   luaL_argcheck(L, A->m == B->m && A->n == B->n, 1,
                 "matrices are not the same size");
   matrix_t *matrix = alloc_Lua_matrix(L, A->m, B->n);
-  matrix_copy(matrix, A);
-  matrix_add(matrix, B);
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  ops->copy(matrix, A);
+  ops->add(matrix, B);
   return 1;
 }
 
@@ -442,15 +444,50 @@ static int Lua_matrix_sub(lua_State *L) {
   luaL_argcheck(L, A->m == B->m && A->n == B->n, 1,
                 "matrices are not the same size");
   matrix_t *matrix = alloc_Lua_matrix(L, A->m, B->n);
-  matrix_copy(matrix, A);
-  matrix_sub(matrix, B);
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  ops->copy(matrix, A);
+  ops->sub(matrix, B);
   return 1;
 }
 
 static int Lua_matrix_copy(lua_State *L) {
   matrix_t *A = check_Lua_matrix(L, 1);
   matrix_t *matrix = alloc_Lua_matrix(L, A->m, A->n);
-  matrix_copy(matrix, A);
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  ops->copy(matrix, A);
+  return 1;
+}
+
+static int Lua_matrix_solve(lua_State *L) {
+  matrix_t *A = check_Lua_matrix(L, 1);
+  matrix_t *vector = check_Lua_matrix(L, 2);
+  char alg = A->m == A->m ? 'L' : 'Q';
+  if (lua_isstring(L, 3)) {
+    alg = *lua_tostring(L, 3);
+  }
+  bool ok = false;
+  luaL_argcheck(L, alg == 'L' || alg == 'Q' || alg == 'S', 3, "bad algorithm");
+  matrix_t *solution = alloc_Lua_matrix(L, vector->m, vector->n);
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  ops->copy(solution, vector);
+  matrix_t *M = alloc_Lua_matrix(L, A->m, A->n);
+  ops->copy(M, A);
+  switch (alg) {
+  case 'L':
+    ok = ops->solve(M, solution);
+    break;
+  case 'Q':
+    ok = ops->lsq_solve(M, solution, 0.0, false);
+    break;
+  default:
+    ok = ops->lsq_solve(M, solution, 0.0, true);
+    break;
+  }
+  lua_pop(L, 1); // remove the matrix, leaving the vector which is the solution
+  if (!ok) {
+    luaL_error(L, "failed to solve");
+    return 0;
+  }
   return 1;
 }
 
@@ -461,7 +498,8 @@ static int Ravi_matrix_mult(lua_State *L) {
   matrix_t *B = check_Ravi_matrix(L, 2);
   luaL_argcheck(L, A->n == B->m, 1, "matrices are not multiplicable");
   matrix_t *matrix = alloc_Ravi_matrix(L, A->m, B->n, 0.0);
-  if (!matrix_multiply(matrix, A, B, false, false)) {
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  if (!ops->multiply(matrix, A, B, false, false)) {
     luaL_error(L, "matrix multiplication failed");
     return 0;
   }
@@ -474,8 +512,9 @@ static int Ravi_matrix_add(lua_State *L) {
   luaL_argcheck(L, A->m == B->m && A->n == B->n, 1,
                 "matrices are not the same size");
   matrix_t *matrix = alloc_Ravi_matrix(L, A->m, B->n, 0.0);
-  matrix_copy(matrix, A);
-  matrix_add(matrix, B);
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  ops->copy(matrix, A);
+  ops->add(matrix, B);
   return 1;
 }
 
@@ -485,15 +524,50 @@ static int Ravi_matrix_sub(lua_State *L) {
   luaL_argcheck(L, A->m == B->m && A->n == B->n, 1,
                 "matrices are not the same size");
   matrix_t *matrix = alloc_Ravi_matrix(L, A->m, B->n, 0.0);
-  matrix_copy(matrix, A);
-  matrix_sub(matrix, B);
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  ops->copy(matrix, A);
+  ops->sub(matrix, B);
   return 1;
 }
 
 static int Ravi_matrix_copy(lua_State *L) {
   matrix_t *A = check_Ravi_matrix(L, 1);
   matrix_t *matrix = alloc_Ravi_matrix(L, A->m, A->n, 0.0);
-  matrix_copy(matrix, A);
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  ops->copy(matrix, A);
+  return 1;
+}
+
+static int Ravi_matrix_solve(lua_State *L) {
+  matrix_t *A = check_Ravi_matrix(L, 1);
+  matrix_t *vector = check_Ravi_matrix(L, 2);
+  char alg = A->m == A->m ? 'L' : 'Q';
+  if (lua_isstring(L, 3)) {
+    alg = *lua_tostring(L, 3);
+  }
+  bool ok = false;
+  luaL_argcheck(L, alg == 'L' || alg == 'Q' || alg == 'S', 3, "bad algorithm");
+  matrix_t *solution = alloc_Ravi_matrix(L, vector->m, vector->n, 0.0);
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  ops->copy(solution, vector);
+  matrix_t *M = alloc_Ravi_matrix(L, A->m, A->n, 0.0);
+  ops->copy(M, A);
+  switch (alg) {
+  case 'L':
+    ok = ops->solve(M, solution);
+    break;
+  case 'Q':
+    ok = ops->lsq_solve(M, solution, 0.0, false);
+    break;
+  default:
+    ok = ops->lsq_solve(M, solution, 0.0, true);
+    break;
+  }
+  lua_pop(L, 1); // remove the matrix, leaving the vector which is the solution
+  if (!ok) {
+    luaL_error(L, "failed to solve");
+    return 0;
+  }
   return 1;
 }
 
@@ -525,10 +599,12 @@ void create_library(lua_State *L, const struct luaL_Reg *regs) {
 static const struct luaL_Reg mylib[] = {{"vector", make_Lua_vector},
                                         {"matrix", make_Lua_matrix},
                                         {"copy", Lua_matrix_copy},
+                                        {"solve", Lua_matrix_solve},
 #if RAVI_ENABLED
                                         {"vectorx", make_Ravi_vector},
                                         {"matrixx", make_Ravi_matrix},
                                         {"copyx", Ravi_matrix_copy},
+                                        {"solvex", Ravi_matrix_solve},
 #endif
                                         {NULL, NULL}};
 

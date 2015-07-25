@@ -83,8 +83,9 @@ assert(#C == 6)
 for i = 1,#C do assert(C[i] == 2*A[i]) end
 
 function comp(a: number[], b: number[])
+  local abs = math.abs
   for i = 1, #a do
-    if a[i] ~= b[i] then
+    if abs(a[i] - b[i]) > 1e-10 then
       return false
     end
   end
@@ -97,5 +98,22 @@ Z=t.copyx(B)
 assert(comp(B, Z))
 
 --ravi.dumpllvmasm(comp)
+
+-- Solve square matrix (linear equation)
+A=t.matrix { {1,4}, {2,5} }
+b=t.vector { 3, 6 }
+x=t.solve(A, b)
+assert(x[1] == -1.0 and x[2] == 2.0)
+
+A=t.matrixx { {1,4}, {2,5} }
+b=t.vectorx { 3, 6 }
+x=t.solvex(A, b)
+assert(x[1] == -1.0 and x[2] == 2.0)
+
+x1=t.solvex(A, b, 'Q')
+assert(comp(x, x1))
+
+x1=t.solvex(A, b, 'S')
+assert(comp(x, x1))
 
 print 'test OK'

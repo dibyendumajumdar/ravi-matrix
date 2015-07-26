@@ -84,6 +84,9 @@ struct matrix_ops_t {
   // M must rows > columns
   // V a column vector with rows same as M
   bool (*lsq_solve)(matrix_t *M, matrix_t *V, double rcond, bool use_svd);
+
+  // A must be square matrix
+  bool (*inverse)(matrix_t *A);
 };
 
 API const matrix_ops_t *ravi_matrix_get_implementation();

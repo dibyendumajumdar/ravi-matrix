@@ -491,6 +491,18 @@ static int Lua_matrix_solve(lua_State *L) {
   return 1;
 }
 
+static int Lua_matrix_inverse(lua_State *L) {
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  matrix_t *A = check_Lua_matrix(L, 1);
+  matrix_t *M = alloc_Lua_matrix(L, A->m, A->n);
+  ops->copy(M, A);
+  if (!ops->inverse(M)) {
+    luaL_error(L, "matrix is not invertible");
+    return 0;
+  }
+  return 1;
+}
+
 #if RAVI_ENABLED
 /* multiply two number array matrices */
 static int Ravi_matrix_mult(lua_State *L) {
@@ -571,6 +583,18 @@ static int Ravi_matrix_solve(lua_State *L) {
   return 1;
 }
 
+static int Ravi_matrix_inverse(lua_State *L) {
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  matrix_t *A = check_Ravi_matrix(L, 1);
+  matrix_t *M = alloc_Ravi_matrix(L, A->m, A->n, 0.0);
+  ops->copy(M, A);
+  if (!ops->inverse(M)) {
+    luaL_error(L, "matrix is not invertible");
+    return 0;
+  }
+  return 1;
+}
+
 #endif
 
 // adds to an existing table
@@ -600,11 +624,13 @@ static const struct luaL_Reg mylib[] = {{"vector", make_Lua_vector},
                                         {"matrix", make_Lua_matrix},
                                         {"copy", Lua_matrix_copy},
                                         {"solve", Lua_matrix_solve},
+                                        {"inv", Lua_matrix_inverse},
+
 #if RAVI_ENABLED
                                         {"vectorx", make_Ravi_vector},
                                         {"matrixx", make_Ravi_matrix},
                                         {"copyx", Ravi_matrix_copy},
-                                        {"solvex", Ravi_matrix_solve},
+                                        {"invx", Ravi_matrix_inverse},
 #endif
                                         {NULL, NULL}};
 

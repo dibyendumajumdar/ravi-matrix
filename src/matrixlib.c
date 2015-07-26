@@ -395,11 +395,42 @@ static bool matrix_lsq_solve(matrix_t *A, matrix_t *y, double rcond, bool svd) {
   return true;
 }
 
+static bool matrix_inverse(matrix_t *a) {
+  int m = a->m;
+  int n = a->n;
+  if (m != n) {
+    fprintf(stderr, "matrix is not square");
+    return false;
+  }
+  int info = 0;
+  int size = min(m, n);
+  int *ipiv = (int *)alloca(sizeof(int) * size);
+  memset(ipiv, 0, sizeof(int) * size);
+  int lda = max(1, m);
+  dgetrf_(&m, &n, &a->data[0], &lda, ipiv, &info);
+  if (info != 0) {
+    fprintf(stderr, "failed LU factorization of input matrix");
+    return false;
+  }
+  n = a->n;
+  lda = n;
+  int lwork = n * n;
+  double *work = (double *)alloca(sizeof(double) * lwork);
+  info = 0;
+  dgetri_(&n, &a->data[0], &lda, ipiv, work, &lwork, &info);
+  if (info != 0) {
+    fprintf(stderr, "failed to compute inverse of matrix");
+    return false;
+  }
+  return true;
+}
+
+
 /////////////////////////////////////////////////////
 
 static matrix_ops_t ops = {matrix_multiply, matrix_norm1, matrix_lufactor,
                            matrix_estimate_rcond, matrix_svd, matrix_negate,
                            matrix_add, matrix_sub, matrix_copy, matrix_solve,
-                           matrix_lsq_solve};
+                           matrix_lsq_solve, matrix_inverse};
 
 const matrix_ops_t *ravi_matrix_get_implementation() { return &ops; }

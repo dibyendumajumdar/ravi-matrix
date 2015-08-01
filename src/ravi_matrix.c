@@ -400,9 +400,26 @@ static int Lua_vector_get(lua_State *L) {
   matrix_t *vector = check_Lua_matrix(L, 1);
   int pos = (int)luaL_checkinteger(L, 2);
   luaL_argcheck(L, pos >= 1 && pos <= (vector->m * vector->n), 2,
-                "access out of bounds");
+                "read access out of bounds");
   lua_pushnumber(L, vector->data[pos - 1]);
   return 1;
+}
+
+// Update a particular element of a Lua matrix
+// arg1 - Lua matrix
+// arg2 - element position
+// arg3 - value to set
+static int Lua_vector_set(lua_State *L) {
+  matrix_t *vector = check_Lua_matrix(L, 1);
+  int pos = (int)luaL_checkinteger(L, 2);
+  if (pos < 1 || pos > (vector->m * vector->n)) {
+    fprintf(stderr, "pos = %d\n", pos);
+  }
+  luaL_argcheck(L, pos >= 1 && pos <= (vector->m * vector->n), 2,
+    "write access out of bounds");
+  lua_Number val = luaL_checknumber(L, 3);
+  vector->data[pos - 1] = val;
+  return 0;
 }
 
 // compute array length of a Lua matrix
@@ -503,6 +520,21 @@ static int Lua_matrix_inverse(lua_State *L) {
   return 1;
 }
 
+static int Lua_matrix_transpose(lua_State *L) {
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  matrix_t *A = check_Lua_matrix(L, 1);
+  matrix_t *M = alloc_Lua_matrix(L, A->n, A->m);
+  ops->transpose(M, A);
+  return 1;
+}
+
+static int Lua_matrix_dimensions(lua_State *L) {
+  matrix_t *A = check_Lua_matrix(L, 1);
+  lua_pushinteger(L, A->m);
+  lua_pushinteger(L, A->n);
+  return 2;
+}
+
 #if RAVI_ENABLED
 /* multiply two number array matrices */
 static int Ravi_matrix_mult(lua_State *L) {
@@ -595,6 +627,21 @@ static int Ravi_matrix_inverse(lua_State *L) {
   return 1;
 }
 
+static int Ravi_matrix_transpose(lua_State *L) {
+  const matrix_ops_t *ops = ravi_matrix_get_implementation();
+  matrix_t *A = check_Ravi_matrix(L, 1);
+  matrix_t *M = alloc_Ravi_matrix(L, A->n, A->m, 0.0);
+  ops->transpose(M, A);
+  return 1;
+}
+
+static int Ravi_matrix_dimensions(lua_State *L) {
+  matrix_t *A = check_Ravi_matrix(L, 1);
+  lua_pushinteger(L, A->m);
+  lua_pushinteger(L, A->n);
+  return 2;
+}
+
 #endif
 
 // adds to an existing table
@@ -624,13 +671,18 @@ static const struct luaL_Reg mylib[] = {{"vector", make_Lua_vector},
                                         {"matrix", make_Lua_matrix},
                                         {"copy", Lua_matrix_copy},
                                         {"solve", Lua_matrix_solve},
-                                        {"inv", Lua_matrix_inverse},
+                                        {"inverse", Lua_matrix_inverse},
+                                        {"transpose", Lua_matrix_transpose},
+                                        {"dim", Lua_matrix_dimensions},
 
 #if RAVI_ENABLED
-                                        {"vectorx", make_Ravi_vector},
-                                        {"matrixx", make_Ravi_matrix},
-                                        {"copyx", Ravi_matrix_copy},
-                                        {"invx", Ravi_matrix_inverse},
+                                        {"vectorR", make_Ravi_vector},
+                                        {"matrixR", make_Ravi_matrix},
+                                        {"copyR", Ravi_matrix_copy},
+                                        {"solveR", Ravi_matrix_solve},
+                                        {"inverseR", Ravi_matrix_inverse},
+                                        {"transposeR", Ravi_matrix_transpose},
+                                        {"dimR", Ravi_matrix_dimensions},
 #endif
                                         {NULL, NULL}};
 
@@ -639,6 +691,8 @@ int luaopen_ravimatrix(lua_State *L) {
   l_newmetatable(L, Lua_matrix);
   lua_pushstring(L, "Lua matrix");
   lua_setfield(L, -2, "type");
+  lua_pushcfunction(L, Lua_vector_set);
+  lua_setfield(L, -2, "__newindex");
   lua_pushcfunction(L, Lua_vector_get);
   lua_setfield(L, -2, "__index");
   lua_pushcfunction(L, Lua_vector_len);

@@ -174,8 +174,7 @@ static bool matrix_sub(matrix_t *A, const matrix_t *B) {
 // Copy B into A
 static void matrix_copy(matrix_t *A, const matrix_t *B) {
   if (A->m != B->m || A->n != B->n) {
-    fprintf(stderr,
-            "Matrix subtraction failed as matrices are not the same size\n");
+    fprintf(stderr, "Matrix copy failed as matrices are not the same size\n");
     assert(false);
   }
   const double *e = &A->data[A->m * A->n];
@@ -425,12 +424,25 @@ static bool matrix_inverse(matrix_t *a) {
   return true;
 }
 
+static void matrix_transpose(matrix_t *result, const matrix_t *m) {
+  assert(result->n == m->m && result->m == m->n);
+  /*
+    result is column order so we can use
+    more optimimised iterator
+  */
+  double *rp = &result->data[0];
+  for (int32_t i = 0; i < m->m; i++) {
+    for (int32_t j = 0; j < m->n; j++) {
+      *rp++ = m->data[j * m->m + i];
+    }
+  }
+}
 
 /////////////////////////////////////////////////////
 
 static matrix_ops_t ops = {matrix_multiply, matrix_norm1, matrix_lufactor,
                            matrix_estimate_rcond, matrix_svd, matrix_negate,
                            matrix_add, matrix_sub, matrix_copy, matrix_solve,
-                           matrix_lsq_solve, matrix_inverse};
+                           matrix_lsq_solve, matrix_inverse, matrix_transpose};
 
 const matrix_ops_t *ravi_matrix_get_implementation() { return &ops; }

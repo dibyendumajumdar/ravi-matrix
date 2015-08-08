@@ -412,9 +412,6 @@ static int Lua_vector_get(lua_State *L) {
 static int Lua_vector_set(lua_State *L) {
   matrix_t *vector = check_Lua_matrix(L, 1);
   int pos = (int)luaL_checkinteger(L, 2);
-  if (pos < 1 || pos > (vector->m * vector->n)) {
-    fprintf(stderr, "pos = %d\n", pos);
-  }
   luaL_argcheck(L, pos >= 1 && pos <= (vector->m * vector->n), 2,
     "write access out of bounds");
   lua_Number val = luaL_checknumber(L, 3);

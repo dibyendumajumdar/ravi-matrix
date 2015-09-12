@@ -6,6 +6,8 @@ enable_testing()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
+option(USE_OPENBLAS "Controls whether OpenBLAS will be used" ON)
+
 #LAPACK
 if (NOT MSVC)
   find_package(LAPACK REQUIRED)
@@ -84,6 +86,9 @@ if (MSVC)
   add_definitions(-DADD_)
   add_definitions(-DHAVE_LAPACK_CONFIG_H)
   add_definitions(-DLAPACK_COMPLEX_STRUCTURE)
+  if (USE_OPENBLAS)
+    add_definitions(-DUSE_OPENBLAS)
+  endif()
 endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
@@ -94,8 +99,12 @@ if (APPLE)
 endif()
 
 if (MSVC)
-  include_directories("c:/libs")
-  set(LAPACK_LIBRARIES "liblapack.lib;libblas.lib")
+  if (USE_OPENBLAS)
+    include_directories("c:/libs/openblas")
+    set(LAPACK_LIBRARIES "liblapack.lib;libopenblas.lib")
+  else()
+    set(LAPACK_LIBRARIES "liblapack.lib;libblas.lib")
+  endif()
   link_directories("c:/libs")
 elseif(APPLE)
 else()

@@ -83,6 +83,7 @@ end
 
 local n = arg[1] or 1000;
 local use_ravi_matrix = arg[2] or false
+print("using ravi matrix:", use_ravi_matrix)
 
 if use_ravi_matrix then
   matrix=t.matrixR
@@ -95,12 +96,12 @@ n = math.floor(n/2) * 2;
 local t1 = os.clock()
 local a = gen(n) * gen(n);
 local t2 = os.clock()
-print("total time taken ", t2-t1)
+print("ravi-matrix: total time taken ", t2-t1)
 
 if use_ravi_matrix then
   local t11 = os.clock()
   local a1 = mmul(gen(n), gen(n));
   local t21 = os.clock()
-  print("total time taken ", t21-t11)
+  print("Ravi(Lua) mmul: total time taken ", t21-t11)
   assert(comp(a,a1))
 end

@@ -33,15 +33,15 @@
 extern "C" {
 #endif
 
-#ifndef __APPLE__
+#if !defined(__APPLE__) && !defined(USE_OPENBLAS)
+extern void ddisna_(char *job, int *m, int *n, double *d, double *sep,
+                    int *info);
 extern void dgesv_(int *N, int *nrhs, double *A, int *lda, int *ipiv, double *b,
                    int *ldb, int *info);
 extern void dgemm_(char *transa, char *transb, int *m, int *n, int *k,
                    double *alpha, double *a, int *lda, double *b, int *ldb,
                    double *beta, double *c, int *ldc);
 extern void dgetrf_(int *m, int *n, double *a, int *lda, int *ipiv, int *info);
-extern void dgetri_(int *n, double *a, int *lda, int *ipiv, double *work,
-                    int *lwork, int *info);
 extern void dgemv_(char *trans, int *m, int *n, double *alpha, double *a,
                    int *lda, double *x, int *incx, double *beta, double *y,
                    int *incy);
@@ -64,9 +64,28 @@ extern double dlange_(const char *norm, const int *m, const int *n,
 extern void dgesdd_(char *jobz, int *m, int *n, double *a, int *lda, double *s,
                     double *u, int *ldu, double *vt, int *ldvt, double *work,
                     int *lwork, int *iwork, int *info);
-extern void ddisna_(char *job, int *m, int *n, double *d, double *sep,
-                    int *info);
-#else /* __APPLE__ */
+extern void dgetri_(int *n, double *a, int *lda, int *ipiv, double *work,
+                    int *lwork, int *info);
+#elif defined(USE_OPENBLAS)
+#include <openblas_config.h>
+#include <f77blas.h>
+extern void dgelsd_(int *m, int *n, int *nrhs, double *a, int *lda, double *b,
+                    int *ldb, double *s, double *rcond, int *rank, double *work,
+                    int *lwork, int *iwork, int *info);
+extern void dgelsy_(int *m, int *n, int *nrhs, double *a, int *lda, double *b,
+                    int *ldb, int *jpvt, double *rcond, int *rank, double *work,
+                    int *lwork, int *info);
+extern void dgecon_(const char *norm, const int *n, double *a, const int *lda,
+                    const double *anorm, double *rcond, double *work,
+                    int *iwork, int *info);
+extern double dlange_(const char *norm, const int *m, const int *n,
+                      const double *a, const int *lda, double *work);
+extern void dgesdd_(char *jobz, int *m, int *n, double *a, int *lda, double *s,
+                    double *u, int *ldu, double *vt, int *ldvt, double *work,
+                    int *lwork, int *iwork, int *info);
+extern void dgetri_(int *n, double *a, int *lda, int *ipiv, double *work,
+                    int *lwork, int *info);
+#elif defined(__APPLE__)
 #include <Accelerate/Accelerate.h>
 #endif /* __APPLE__ */
 
@@ -426,6 +445,18 @@ static bool matrix_inverse(matrix_t *a) {
 
 static void matrix_transpose(matrix_t *result, const matrix_t *m) {
   assert(result->n == m->m && result->m == m->n);
+  if (m->m <= 0 || m->n <= 0)
+    return;
+#if 0 // USE_OPENBLAS (for some reason link fails)
+  char ordering = 'C';
+  char transpose = 'T';
+  double scale = 1.0;
+  int rows = m->m;
+  int cols = m->n;
+  int lda = max(1, rows);
+  int ldb = max(1, cols);
+  domatcopy_(&ordering, &transpose, &rows, &cols, &scale, &m->data[0], &lda, &result->data[0], &ldb);
+#else
   /*
     result is column order so we can use
     more optimimised iterator
@@ -436,6 +467,7 @@ static void matrix_transpose(matrix_t *result, const matrix_t *m) {
       *rp++ = m->data[j * m->m + i];
     }
   }
+#endif
 }
 
 /////////////////////////////////////////////////////

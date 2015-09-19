@@ -1,10 +1,7 @@
 -- Adapted from https://github.com/attractivechaos/plb/blob/master/matmul/matmul_v1.lua
 -- dummy cast
 
-local x,err=package.loadlib('/github/ravi-matrix/build/Debug/ravimatrix.dll',
-                      'luaopen_ravimatrix')
-assert(not err)
-local t=x()
+t=require 'ravimatrix'
 local matrix, dim, T = t.matrix, t.dim, t.transpose
 local print = print
 

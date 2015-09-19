@@ -1,7 +1,4 @@
-x,err=package.loadlib('/github/ravi-matrix/build/Debug/ravimatrix.dll',
-                      'luaopen_ravimatrix')
-assert(not err)
-t=x()
+t=require 'ravimatrix'
 
 v=t.vector(0)
 assert(getmetatable(v).type == "Lua matrix")

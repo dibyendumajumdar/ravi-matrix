@@ -21,8 +21,9 @@
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
 
-#include <ravimatrix/ravi_matrix.h>
-#include <ravimatrix/matrixlib.h>
+#include <ravi_matrix.h>
+#include <matrixlib.h>
+#include <raviluautil.h>
 
 #define RAVI_ENABLED 1
 
@@ -30,90 +31,12 @@
 #include <stdio.h>
 #include <assert.h>
 
-#if LUA_VERSION_NUM < 502
-
-// Forward compatibility with Lua 5.2
-// Following is not defined in 5.1
-
-#define lua_absindex(L, i)                                                     \
-  ((i) > 0 || (i) <= LUA_REGISTRYINDEX ? (i) : lua_gettop(L) + (i) + 1)
-
-#endif
-
-#if (LUA_VERSION_NUM >= 502)
-
-// backward compatibility with Lua 5.1
-#undef lua_equal
-#define lua_equal(L, idx1, idx2) lua_compare(L, (idx1), (idx2), LUA_OPEQ)
-
-#undef lua_objlen
-#define lua_objlen lua_rawlen
-
-#endif
-
-// The normal Lua metatable functions in C use string
-// keys - these are expensive as the key needs to be
-// converted to Lua string, hash code computed etc.
-// Following implementations are taken from a post in
-// Lua mailing list (http://lua-users.org/lists/lua-l/2010-11/msg00151.html)
-// They use lightuserdata instead of strings to speed
-// things up
-// meta_key is the key assigned to the meta
-// table of the userdata
-int l_newmetatable(lua_State *L, const char *meta_key) {
-  lua_pushlightuserdata(L, (void *)meta_key);
-  lua_rawget(L, LUA_REGISTRYINDEX);
-  if (!lua_isnil(L, -1)) // name already in use?
-    return 0;            // leave previous value on top, but return 0
-  lua_pop(L, 1);         // pop the nil value
-  lua_newtable(L);       // create metatable
-  lua_pushlightuserdata(L, (void *)meta_key); // meta_key
-  lua_pushvalue(L, -2);                       // table
-  lua_rawset(L, LUA_REGISTRYINDEX); // assign table to meta_key in the registry
-  return 1;
-}
-
-// meta_key is the key assigned to the meta table of the userdata
-void l_getmetatable(lua_State *L, const char *meta_key) {
-  lua_pushlightuserdata(L, (void *)meta_key); // meta_key
-  lua_rawget(L, LUA_REGISTRYINDEX); // obtain the value associated with
-                                    // meta_key from registry
-}
-
-// arg_index is the position of userdata argument on the stack
-// meta_key is the key assigned to the meta table of the userdata
-void *l_testudata(lua_State *L, int arg_index, const char *meta_key) {
-  void *p = lua_touserdata(L, arg_index);
-  if (p != NULL) {                                // value is a userdata?
-    if (lua_getmetatable(L, arg_index)) {         // does it have a metatable?
-      lua_pushlightuserdata(L, (void *)meta_key); // meta_key
-      lua_rawget(
-          L,
-          LUA_REGISTRYINDEX); // get correct metatable associated with meta_key
-      if (lua_rawequal(L, -1, -2)) { // compare: does it have the correct mt?
-        lua_pop(L, 2);               // remove both metatables
-        return p;                    // test ok
-      }
-    }
-  }
-  return NULL; /* to avoid warnings */
-}
-
-// arg_index is the position of userdata argument on the stack
-// meta_key is the key assigned to the meta table of the userdata
-void *l_checkudata(lua_State *L, int arg_index, const char *meta_key) {
-  void *p = l_testudata(L, arg_index, meta_key);
-  if (p == NULL)
-    luaL_argerror(L, arg_index, meta_key);
-  return p;
-}
-
 // We need fixed pointer values for metatable keys
 static const char *Lua_matrix = "Lua.matrix";
 static const char *Ravi_matrix = "Ravi.matrix";
 
-#define test_Lua_matrix(L, idx) ((matrix_t *)l_testudata(L, idx, Lua_matrix))
-#define check_Lua_matrix(L, idx) ((matrix_t *)l_checkudata(L, idx, Lua_matrix))
+#define test_Lua_matrix(L, idx) ((matrix_t *)raviU_testudata(L, idx, Lua_matrix))
+#define check_Lua_matrix(L, idx) ((matrix_t *)raviU_checkudata(L, idx, Lua_matrix))
 
 // Allocate a Lua matrix as a userdata (compatible with Lua 5.3)
 static inline matrix_t *alloc_Lua_matrix(lua_State *L, int m, int n) {
@@ -123,7 +46,7 @@ static inline matrix_t *alloc_Lua_matrix(lua_State *L, int m, int n) {
       (matrix_t *)lua_newuserdata(L, sizeof(double) * (m * n + 1));
   matrix->m = m;
   matrix->n = n;
-  l_getmetatable(L, Lua_matrix);
+  raviU_getmetatable(L, Lua_matrix);
   lua_setmetatable(L, -2);
   return matrix;
 }
@@ -133,7 +56,7 @@ static inline matrix_t *alloc_Lua_matrix(lua_State *L, int m, int n) {
 // Stack top must be a Ravi number array
 static inline matrix_t *set_Ravi_matrix_meta(lua_State *L, int m, int n) {
   assert(m >= 0 && n >= 0);
-  l_getmetatable(L, Ravi_matrix);
+  raviU_getmetatable(L, Ravi_matrix);
   lua_setmetatable(L, -2);
   double *start = ravi_get_number_array_rawdata(L, -1);
   matrix_t *matrix = (matrix_t *)start;
@@ -154,7 +77,7 @@ static inline matrix_t *alloc_Ravi_matrix(lua_State *L, int m, int n,
 static matrix_t *test_Ravi_matrix(lua_State *L, int arg_index) {
   if (ravi_is_number_array(L, arg_index)) { // value is a Ravi array?
     if (lua_getmetatable(L, arg_index)) {   // does it have a metatable?
-      l_getmetatable(L, Ravi_matrix);       // Get metatable for Ravi matrices
+      raviU_getmetatable(L, Ravi_matrix);       // Get metatable for Ravi matrices
       if (lua_rawequal(L, -1, -2)) { // compare: does it have the correct mt?
         lua_pop(L, 2);               // remove both metatables
         return (matrix_t *)ravi_get_number_array_rawdata(L,
@@ -641,29 +564,6 @@ static int Ravi_matrix_dimensions(lua_State *L) {
 
 #endif
 
-// adds to an existing table
-// table must be on stop of the stack
-void add_to_library(lua_State *L, const struct luaL_Reg *regs) {
-  for (int i = 0; regs[i].name != NULL; i++) {
-    lua_pushcclosure(L, regs[i].func, 0);
-    lua_setfield(L, -2, regs[i].name);
-  }
-}
-
-// creates a table of functions which is a library in Lua
-// terms. We use this as a portable way across 5.1 and 5.2 which
-// follows the latest conventions - i.e. avoid polluting global
-// namespace
-void create_library(lua_State *L, const struct luaL_Reg *regs) {
-  int count = 0;
-  for (int i = 0; regs[i].name != NULL; i++) {
-    count++;
-  }
-  lua_createtable(L, 0, count);
-  add_to_library(L, regs);
-  // leave table on the stack
-}
-
 static const struct luaL_Reg mylib[] = {{"vector", make_Lua_vector},
                                         {"matrix", make_Lua_matrix},
                                         {"copy", Lua_matrix_copy},
@@ -685,7 +585,7 @@ static const struct luaL_Reg mylib[] = {{"vector", make_Lua_vector},
 
 int luaopen_ravimatrix(lua_State *L) {
   fprintf(stderr, "Initializing RaviMatrix\n");
-  l_newmetatable(L, Lua_matrix);
+  raviU_newmetatable(L, Lua_matrix);
   lua_pushstring(L, "Lua matrix");
   lua_setfield(L, -2, "type");
   lua_pushcfunction(L, Lua_vector_set);
@@ -703,7 +603,7 @@ int luaopen_ravimatrix(lua_State *L) {
   lua_pop(L, 1);
 
 #if RAVI_ENABLED
-  l_newmetatable(L, Ravi_matrix);
+  raviU_newmetatable(L, Ravi_matrix);
   lua_pushstring(L, "Ravi matrix");
   lua_setfield(L, -2, "type");
   lua_pushcfunction(L, Ravi_matrix_mult);
@@ -715,7 +615,7 @@ int luaopen_ravimatrix(lua_State *L) {
   lua_pop(L, 1);
 #endif
 
-  create_library(L, mylib);
+  raviU_create_library(L, mylib);
   fprintf(stdout, "RaviMatrix initialized successfully\n");
   return 1;
 }

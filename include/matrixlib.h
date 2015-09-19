@@ -27,7 +27,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <ravimatrix/conf.h>
+#include <ravimatrix-conf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,7 +92,7 @@ struct matrix_ops_t {
   void(*transpose)(matrix_t *transposed, matrix_t *original);
 };
 
-API const matrix_ops_t *ravi_matrix_get_implementation();
+RAVIMATRIX_API const matrix_ops_t *ravi_matrix_get_implementation();
 
 #ifdef __cplusplus
 }

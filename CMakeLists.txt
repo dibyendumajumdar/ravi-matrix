@@ -6,14 +6,19 @@ enable_testing()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-option(USE_OPENBLAS "Controls whether OpenBLAS will be used" ON)
+if (WIN32)
+  option(USE_OPENBLAS "Controls whether OpenBLAS will be used" ON)
+endif(WIN32)
 
-#LAPACK
-if (NOT MSVC)
+#LAPACK and BLAS
+if (USE_OPENBLAS)
+  find_package(OpenBLAS REQUIRED)
+endif(USE_OPENBLAS)
+if (NOT WIN32)
   find_package(LAPACK REQUIRED)
 endif()
-
 find_package(RAVI REQUIRED)
+find_package(RaviLuaUTILS REQUIRED)
 
 message( STATUS "LAPACK_LINKER_FLAGS   : " ${LAPACK_LINKER_FLAGS} )
 message( STATUS "LAPACK_LIBRARIES      : " ${LAPACK_LIBRARIES} )
@@ -21,6 +26,8 @@ message( STATUS "BLAS_LIBRARIES        : " ${BLAS_LIBRARIES} )
 message( STATUS "BLAS_LINKER_FLAGS     : " ${BLAS_LINKER_FLAGS} )
 message( STATUS "LUA_LIBRARIES         : " ${LUA_LIBRARIES} )
 message( STATUS "LUA_INCLUDE_DIRS      : " ${LUA_INCLUDE_DIRS} )
+message( STATUS "OPENBLAS_LIBRARIES    : " ${OPENBLAS_LIBRARIES} )
+message( STATUS "OPENBLAS_INCLUDE_DIRS : " ${OPENBLAS_INCLUDE_DIRS} )
 
 if (MSVC)
   set(CMAKE_C_FLAGS_DEBUG "/Od /D_DEBUG /MDd /Zi /RTC1 /EHsc")
@@ -78,10 +85,8 @@ if (APPLE)
   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-fno-rtti -O1 -g3 -Wall -Wno-sign-compare -std=c++11 -fno-exceptions -DLUA_COMPAT_5_2 -DLUA_USE_MACOSX")
 endif()
 
-include_directories("${PROJECT_SOURCE_DIR}/include")
 add_definitions(-DLUA_COMPAT_MODULE)
-
-if (MSVC)
+if (WIN32)
   # LAPACK defines  
   add_definitions(-DADD_)
   add_definitions(-DHAVE_LAPACK_CONFIG_H)
@@ -93,42 +98,42 @@ endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
 include_directories("${LUA_INCLUDE_DIRS}")
-
+include_directories("${RAVILUAUTILS_INCLUDE_DIRS}")
 if (APPLE)
   include_directories("/System/Library/Frameworks")
 endif()
-
-if (MSVC)
+if (WIN32)
   if (USE_OPENBLAS)
-    include_directories("c:/libs/openblas")
-    set(LAPACK_LIBRARIES "liblapack.lib;libopenblas.lib")
+    include_directories("${OPENBLAS_INCLUDE_DIRS}")
+    set(LAPACK_LIBRARIES "liblapack.lib;${OPENBLAS_LIBRARIES}")
   else()
     set(LAPACK_LIBRARIES "liblapack.lib;libblas.lib")
   endif()
-  link_directories("c:/libs")
 elseif(APPLE)
 else()
 endif()
+link_directories("${CMAKE_INSTALL_PREFIX}/bin")
 
 set (RAVIMATRIX_SRCS src/matrixlib.c src/ravi_matrix.c)
-    
+file(GLOB RAVIMATRIX_HEADERS "${PROJECT_SOURCE_DIR}/include/*.h")
+
 if (MSVC)
   source_group("Source Files" FILES ${RAVIMATRIX_SRCS})
-endif(MSVC)
-
-file(GLOB RAVIMATRIX_HEADERS "${PROJECT_SOURCE_DIR}/include/ravimatrix/*.h")
-
-if (MSVC)
   source_group("Headers" FILES ${RAVIMATRIX_HEADERS})
 endif()
 
 #Main library
 add_library(ravimatrix SHARED 
-  ${RAVIMATRIX_HEADERS} ${LUA_HEADERS} 
+  ${RAVIMATRIX_HEADERS} ${LUA_HEADERS}
   ${RAVIMATRIX_SRCS} )
 # RAVIMATRIX_IMPLEMENTATION is set when compiling shared library so that 
 # appropriate export declarations can be set 
 set_target_properties(ravimatrix 
   PROPERTIES DEFINE_SYMBOL "RAVIMATRIX_IMPLEMENTATION")
-target_link_libraries(ravimatrix ${LAPACK_LIBRARIES} ${LUA_LIBRARIES}) 
+target_link_libraries(ravimatrix ${LAPACK_LIBRARIES} ${LUA_LIBRARIES} 
+  ${OPENBLAS_LIBRARIES} ${RAVILUAUTILS_LIBRARIES}) 
 
+install(TARGETS ravimatrix
+        DESTINATION bin)
+install(FILES ${RAVIMATRIX_HEADERS} 
+        DESTINATION include/ravimatrix)

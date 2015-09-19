@@ -24,7 +24,7 @@
 #ifndef RAVI_MATRIX_H_
 #define RAVI_MATRIX_H_
 
-#include <ravimatrix/conf.h>
+#include <ravimatrix-conf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +33,7 @@ extern "C" {
 #include <lauxlib.h>
 #include <lualib.h>
 
-DLLEXPORT int luaopen_ravimatrix(lua_State *L);
+RAVIMATRIX_API int luaopen_ravimatrix(lua_State *L);
 
 #ifdef __cplusplus
 }

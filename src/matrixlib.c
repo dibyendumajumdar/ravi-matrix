@@ -146,7 +146,7 @@ static int matrix_lufactor(matrix_t *A) {
   for (int i = 0; i < size; i++)
     ipiv[i] = 0;
 
-  int lda = max(1, m);
+  int lda = (1 < m? m: 1);
   dgetrf_(&m, &n, &A->data[0], &lda, ipiv, &info);
   if (info != 0)
     fprintf(stderr, "failed LU factorization of input matrix: %d\n", info);
@@ -247,7 +247,9 @@ static bool matrix_svd(const matrix_t *input, matrix_t *S, matrix_t *U,
   work = &workSize;
   lwork = -1; // we want to estimate workSize first
   info = 0;
-  iwork = (int *)calloc(max(1, 8 * min(m, n)), sizeof(int));
+  int min_sz = 8 * (m < n ? m : n); // min(m,n)*8
+  int works = 1 < min_sz ? min_sz : 1; // max
+  iwork = (int *)calloc(works, sizeof(int));
   if (iwork == NULL) {
     fprintf(stderr, "Failed to allocate memory\n");
     goto done;
@@ -369,7 +371,7 @@ static bool matrix_lsq_solve(matrix_t *A, matrix_t *y, double rcond, bool svd) {
   int ldb = m;
   int *jpvt = (int *)alloca(sizeof(int) * n);
   memset(jpvt, 0, sizeof(int) * n);
-  double *s = (double *)alloca(sizeof(double) * max(m, n));
+  double *s = (double *)alloca(sizeof(double) * (m > n ? m: n));
   int lwork = -1;
   int liwork = -1;
   int rank = 0;
@@ -393,9 +395,11 @@ static bool matrix_lsq_solve(matrix_t *A, matrix_t *y, double rcond, bool svd) {
   assert(ptr);
   // solve
   if (svd) {
-    double minmn = max(1, min(m, n));
+    double minmn = m < n ? m : n; // min
+    minmn = 1 < minmn ? minmn : 1; // max
     double smlsiz_plus_1 = 26.;
-    double nlvl = max(0, (int)(log(minmn / smlsiz_plus_1) / log(.2)) + 1);
+    double nlvl = (int)(log(minmn / smlsiz_plus_1) / log(.2)) + 1;
+    nlvl = 0.0 < nlvl ? nlvl : 0.0; // max
     liwork = (int)(3.0 * minmn * nlvl + 11.0 * minmn);
     int *iwork_ptr = (int *)calloc(liwork, sizeof(int));
     assert(iwork_ptr);
@@ -422,10 +426,10 @@ static bool matrix_inverse(matrix_t *a) {
     return false;
   }
   int info = 0;
-  int size = min(m, n);
+  int size = m < n ? m : n; //min
   int *ipiv = (int *)alloca(sizeof(int) * size);
   memset(ipiv, 0, sizeof(int) * size);
-  int lda = max(1, m);
+  int lda = (1 < m ? m : 1);
   dgetrf_(&m, &n, &a->data[0], &lda, ipiv, &info);
   if (info != 0) {
     fprintf(stderr, "failed LU factorization of input matrix");

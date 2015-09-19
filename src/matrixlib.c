@@ -141,7 +141,7 @@ static int matrix_lufactor(matrix_t *A) {
   int n = A->n;
 
   int info = 0;
-  int size = min(m, n);
+  int size = m < n ? m : n;
   int *ipiv = (int *)alloca(sizeof(int) * size);
   for (int i = 0; i < size; i++)
     ipiv[i] = 0;
@@ -219,7 +219,9 @@ static bool matrix_svd(const matrix_t *input, matrix_t *S, matrix_t *U,
   int ldu, ldvt, lwork, info = -1, *iwork = NULL;
   char job = 'A';
   matrix_t *A = NULL;
-  int m = input->m, n = input->n, lda = m, s_size = max(1, min(m, n));
+  int m = input->m, n = input->n, lda = m;
+  int ss = m < n ? m : n;
+  int s_size = 1 < ss ? ss : 1;
   if (S->m != s_size || S->n != 1) {
     fprintf(stderr, "The vector S must be a column vector of size %d\n",
             s_size);

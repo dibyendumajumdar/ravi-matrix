@@ -1,5 +1,5 @@
-#ifndef _RAVIMATRIX_CONF_H
-#define _RAVIMATRIX_CONF_H
+#ifndef RAVI_MATRIX_CONF_H
+#define RAVI_MATRIX_CONF_H
 
 // This header file must be C compilable
 // No C++ artifacts allowed outside of #ifdef __cplusplus

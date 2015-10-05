@@ -136,4 +136,4 @@ target_link_libraries(ravimatrix ${LAPACK_LIBRARIES} ${LUA_LIBRARIES}
 install(TARGETS ravimatrix
         DESTINATION bin)
 install(FILES ${RAVIMATRIX_HEADERS} 
-        DESTINATION include/ravimatrix)
+        DESTINATION include)

@@ -24,7 +24,7 @@
 #ifndef RAVI_MATRIX_H_
 #define RAVI_MATRIX_H_
 
-#include <ravimatrix-conf.h>
+#include <ravi_matrix_conf.h>
 
 #ifdef __cplusplus
 extern "C" {

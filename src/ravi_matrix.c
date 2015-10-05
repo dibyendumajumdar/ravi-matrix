@@ -22,8 +22,8 @@
 ******************************************************************************/
 
 #include <ravi_matrix.h>
-#include <matrixlib.h>
-#include <raviluautil.h>
+#include <ravi_matrixlib.h>
+#include <ravi_lua_utils.h>
 
 #define RAVI_ENABLED 1
 

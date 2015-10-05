@@ -1,7 +1,7 @@
-find_path(RAVILUAUTILS_INCLUDE_DIR raviluautil.h
+find_path(RAVILUAUTILS_INCLUDE_DIR ravi_lua_utils.h
   PATHS
-  c:/ravi/include/raviluautil
-  ~/ravi/include/raviluautil
+  c:/ravi/include
+  ~/ravi/include
 )
 
 find_library(RAVILUAUTILS_LIBRARY

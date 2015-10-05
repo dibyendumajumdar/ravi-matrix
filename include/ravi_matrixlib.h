@@ -21,19 +21,20 @@
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
 
-#ifndef MATRIXLIB_H_
-#define MATRIXLIB_H_
+#ifndef RAVI_MATRIXLIB_H_
+#define RAVI_MATRIXLIB_H_
+
+#include <ravi_matrix_conf.h>
 
 #include <stdbool.h>
 #include <stdint.h>
-
-#include <ravimatrix-conf.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* We will cast the Ravi numeric arrays into this format
+/* 
+* We will cast the Ravi numeric arrays into this format
 * exploiting the fact that there is an extra element in Ravi
 * arrays
 * When not using Ravi this will be our vector or matrix

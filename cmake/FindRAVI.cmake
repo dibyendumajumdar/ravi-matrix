@@ -1,7 +1,7 @@
 find_path(LUA_INCLUDE_DIR lua.h
   PATHS
-  c:/ravi/include/ravi
-  ~/ravi/include/ravi
+  c:/ravi/include
+  ~/ravi/include
 )
 
 find_library(LUA_LIBRARY

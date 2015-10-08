@@ -25,6 +25,7 @@
 #define RAVI_MATRIX_H_
 
 #include <ravi_matrix_conf.h>
+#include <ravi_matrixlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,6 +33,15 @@ extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
+
+typedef struct ravi_matrix_lua_api_t ravi_matrix_lua_api_t;
+struct ravi_matrix_lua_api_t {
+  ravi_matrix_t *(*test_ismatrix)(lua_State *L, int idx);
+  ravi_matrix_t *(*check_ismatrix)(lua_State *L, int idx);
+  ravi_matrix_t *(*alloc_matrix)(lua_State *L, int m, int n, double initv);
+};
+
+RAVIMATRIX_API const ravi_matrix_lua_api_t *ravi_matrix_get_api(bool use_ravi_array);
 
 RAVIMATRIX_API int luaopen_ravimatrix(lua_State *L);
 

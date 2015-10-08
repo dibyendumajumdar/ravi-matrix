@@ -40,60 +40,60 @@ extern "C" {
 * When not using Ravi this will be our vector or matrix
 * user defined type
 */
-typedef struct matrix_t matrix_t;
-struct matrix_t {
+typedef struct ravi_matrix_t ravi_matrix_t;
+struct ravi_matrix_t {
   int32_t m; /* rows */
   int32_t n; /* columns */
   double data[1];
 };
 
-typedef struct matrix_ops_t matrix_ops_t;
-struct matrix_ops_t {
+typedef struct ravi_matrix_ops_t ravi_matrix_ops_t;
+struct ravi_matrix_ops_t {
   // workhorse for matrix multiplication
   // C=A*B
-  bool (*multiply)(matrix_t *C, matrix_t *A, matrix_t *B, bool transposeA,
+  bool (*multiply)(ravi_matrix_t *C, ravi_matrix_t *A, ravi_matrix_t *B, bool transposeA,
                    bool transposeB);
 
-  double (*norm1)(matrix_t *A);
+  double (*norm1)(ravi_matrix_t *A);
 
-  int (*lufactor)(matrix_t *A);
+  int (*lufactor)(ravi_matrix_t *A);
 
-  bool (*estimate_rcond)(const matrix_t *A, double *rcond);
+  bool (*estimate_rcond)(const ravi_matrix_t *A, double *rcond);
 
   // SVD
   // S must be matrix min(m,n) x 1 (vector)
   // U must be matrix m x m
   // V must be matrix n x n
-  bool (*svd)(const matrix_t *A, matrix_t *S, matrix_t *U, matrix_t *V);
+  bool (*svd)(const ravi_matrix_t *A, ravi_matrix_t *S, ravi_matrix_t *U, ravi_matrix_t *V);
 
   // A = -A
-  void (*negate)(matrix_t *A);
+  void (*negate)(ravi_matrix_t *A);
 
   // A += B
-  bool (*add)(matrix_t *A, const matrix_t *B);
+  bool (*add)(ravi_matrix_t *A, const ravi_matrix_t *B);
 
   // A -= B
-  bool (*sub)(matrix_t *A, const matrix_t *B);
+  bool (*sub)(ravi_matrix_t *A, const ravi_matrix_t *B);
 
   // A = copy(B)
-  void (*copy)(matrix_t *A, const matrix_t *B);
+  void (*copy)(ravi_matrix_t *A, const ravi_matrix_t *B);
 
   // M must be a square matrix
   // V a column vector with rows same as M
-  bool (*solve)(matrix_t *M, matrix_t *V);
+  bool (*solve)(ravi_matrix_t *M, ravi_matrix_t *V);
 
   // M must rows > columns
   // V a column vector with rows same as M
-  bool (*lsq_solve)(matrix_t *M, matrix_t *V, double rcond, bool use_svd);
+  bool (*lsq_solve)(ravi_matrix_t *M, ravi_matrix_t *V, double rcond, bool use_svd);
 
   // A must be square matrix
-  bool (*inverse)(matrix_t *A);
+  bool (*inverse)(ravi_matrix_t *A);
 
   // transposed must be size nxm where original is sized mxn
-  void(*transpose)(matrix_t *transposed, const matrix_t *original);
+  void(*transpose)(ravi_matrix_t *transposed, const ravi_matrix_t *original);
 };
 
-RAVIMATRIX_API const matrix_ops_t *ravi_matrix_get_implementation();
+RAVIMATRIX_API const ravi_matrix_ops_t *ravi_matrix_get_implementation();
 
 #ifdef __cplusplus
 }

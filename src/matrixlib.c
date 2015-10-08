@@ -96,7 +96,7 @@ extern void dgetri_(int *n, double *a, int *lda, int *ipiv, double *work,
 // Internal workhorse for matrix multiplication
 // workhorse for matrix multiplication
 // C=A*B
-static bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B,
+static bool matrix_multiply(ravi_matrix_t *C, ravi_matrix_t *A, ravi_matrix_t *B,
                             bool transposeA, bool transposeB) {
   int m = A->m;
   int n = B->n;
@@ -126,7 +126,7 @@ static bool matrix_multiply(matrix_t *C, matrix_t *A, matrix_t *B,
   return true;
 }
 
-static double matrix_norm1(matrix_t *A) {
+static double matrix_norm1(ravi_matrix_t *A) {
   int m = A->m;
   int n = A->n;
   char norm[1] = {'1'};
@@ -136,7 +136,7 @@ static double matrix_norm1(matrix_t *A) {
   return dlange_(&norm[0], &m, &n, a, &lda, work);
 }
 
-static int matrix_lufactor(matrix_t *A) {
+static int matrix_lufactor(ravi_matrix_t *A) {
   int m = A->m;
   int n = A->n;
 
@@ -153,13 +153,13 @@ static int matrix_lufactor(matrix_t *A) {
   return info;
 }
 
-static void matrix_negate(matrix_t *A) {
+static void matrix_negate(ravi_matrix_t *A) {
   const double *e = &A->data[A->m * A->n];
   for (double *p = &A->data[0]; p != e; p++)
     *p = -*p;
 }
 
-static bool matrix_add(matrix_t *A, const matrix_t *B) {
+static bool matrix_add(ravi_matrix_t *A, const ravi_matrix_t *B) {
   if (A->m != B->m || A->n != B->n) {
     fprintf(stderr,
             "Matrix addition failed as matrices are not the same size\n");
@@ -174,7 +174,7 @@ static bool matrix_add(matrix_t *A, const matrix_t *B) {
   return true;
 }
 
-static bool matrix_sub(matrix_t *A, const matrix_t *B) {
+static bool matrix_sub(ravi_matrix_t *A, const ravi_matrix_t *B) {
   if (A->m != B->m || A->n != B->n) {
     fprintf(stderr,
             "Matrix subtraction failed as matrices are not the same size\n");
@@ -190,7 +190,7 @@ static bool matrix_sub(matrix_t *A, const matrix_t *B) {
 }
 
 // Copy B into A
-static void matrix_copy(matrix_t *A, const matrix_t *B) {
+static void matrix_copy(ravi_matrix_t *A, const ravi_matrix_t *B) {
   if (A->m != B->m || A->n != B->n) {
     fprintf(stderr, "Matrix copy failed as matrices are not the same size\n");
     assert(false);
@@ -202,9 +202,9 @@ static void matrix_copy(matrix_t *A, const matrix_t *B) {
     *p = *q;
 }
 
-static matrix_t *make_copy(const matrix_t *src) {
+static ravi_matrix_t *make_copy(const ravi_matrix_t *src) {
   size_t msize = sizeof(int32_t) * 2 + sizeof(double) * src->m * src->n;
-  matrix_t *A = calloc(1, msize);
+  ravi_matrix_t *A = calloc(1, msize);
   memcpy(A, src, msize);
   return A;
 }
@@ -213,12 +213,12 @@ static matrix_t *make_copy(const matrix_t *src) {
 // S must be matrix min(m,n) x 1 (vector)
 // U must be matrix m x m
 // V must be matrix n x n
-static bool matrix_svd(const matrix_t *input, matrix_t *S, matrix_t *U,
-                       matrix_t *V) {
+static bool matrix_svd(const ravi_matrix_t *input, ravi_matrix_t *S, ravi_matrix_t *U,
+                       ravi_matrix_t *V) {
   double workSize, *work = NULL, *a = NULL;
   int ldu, ldvt, lwork, info = -1, *iwork = NULL;
   char job = 'A';
-  matrix_t *A = NULL;
+  ravi_matrix_t *A = NULL;
   int m = input->m, n = input->n, lda = m;
   int ss = m < n ? m : n;
   int s_size = 1 < ss ? ss : 1;
@@ -282,9 +282,9 @@ done:
   return info == 0;
 }
 
-static bool matrix_estimate_rcond(const matrix_t *A, double *rcond) {
+static bool matrix_estimate_rcond(const ravi_matrix_t *A, double *rcond) {
   bool ok = false;
-  matrix_t *copy_of_A = make_copy(A);
+  ravi_matrix_t *copy_of_A = make_copy(A);
   double anorm = matrix_norm1(copy_of_A);
   int info = matrix_lufactor(copy_of_A);
   if (info != 0) {
@@ -313,7 +313,7 @@ done:
   return ok;
 }
 
-static bool matrix_solve(matrix_t *m, matrix_t *v) {
+static bool matrix_solve(ravi_matrix_t *m, ravi_matrix_t *v) {
   if (m->m == 0 || m->n == 0 || v->m == 0 || v->n != 1) {
     fprintf(stderr, "The matrix A and vector y must have rows > 0\n");
     assert(false);
@@ -342,7 +342,7 @@ static bool matrix_solve(matrix_t *m, matrix_t *v) {
   return info == 0;
 }
 
-static bool matrix_lsq_solve(matrix_t *A, matrix_t *y, double rcond, bool svd) {
+static bool matrix_lsq_solve(ravi_matrix_t *A, ravi_matrix_t *y, double rcond, bool svd) {
   if (A->m == 0 || A->n == 0 || y->m == 0 || y->n != 1) {
     fprintf(stderr, "The matrix A and vector y must have rows > 0\n");
     assert(false);
@@ -418,7 +418,7 @@ static bool matrix_lsq_solve(matrix_t *A, matrix_t *y, double rcond, bool svd) {
   return true;
 }
 
-static bool matrix_inverse(matrix_t *a) {
+static bool matrix_inverse(ravi_matrix_t *a) {
   int m = a->m;
   int n = a->n;
   if (m != n) {
@@ -448,7 +448,7 @@ static bool matrix_inverse(matrix_t *a) {
   return true;
 }
 
-static void matrix_transpose(matrix_t *result, const matrix_t *m) {
+static void matrix_transpose(ravi_matrix_t *result, const ravi_matrix_t *m) {
   assert(result->n == m->m && result->m == m->n);
   if (m->m <= 0 || m->n <= 0)
     return;
@@ -477,9 +477,9 @@ static void matrix_transpose(matrix_t *result, const matrix_t *m) {
 
 /////////////////////////////////////////////////////
 
-static matrix_ops_t ops = {matrix_multiply, matrix_norm1, matrix_lufactor,
+static ravi_matrix_ops_t ops = {matrix_multiply, matrix_norm1, matrix_lufactor,
                            matrix_estimate_rcond, matrix_svd, matrix_negate,
                            matrix_add, matrix_sub, matrix_copy, matrix_solve,
                            matrix_lsq_solve, matrix_inverse, matrix_transpose};
 
-const matrix_ops_t *ravi_matrix_get_implementation() { return &ops; }
+const ravi_matrix_ops_t *ravi_matrix_get_implementation() { return &ops; }

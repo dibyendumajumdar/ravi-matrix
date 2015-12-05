@@ -116,7 +116,7 @@ static int make_Lua_vector(lua_State *L) {
       vector->data[i] = initv;
     return 1;
   } else if (lua_istable(L, 1)) {
-    int size = (int)lua_objlen(L, 1);
+    int size = (int)lua_rawlen(L, 1);
     // allocate matrix of 1 column
     ravi_matrix_t *vector = alloc_Lua_matrix(L, (int)size, 1, 0.0);
     for (int x = 0; x < size; x++) {
@@ -151,7 +151,7 @@ static int make_Lua_matrix(lua_State *L) {
 
     ravi_matrix_t *matrix = alloc_Lua_matrix(L, rows, cols, 0.0);
     if (lua_istable(L, 3)) {
-      int size = (int)lua_objlen(L, 3);
+      int size = (int)lua_rawlen(L, 3);
       luaL_argcheck(L, size == rows * cols, 3,
                     "Table supplied is not of required length");
       for (int x = 0; x < size; x++) {
@@ -173,14 +173,14 @@ static int make_Lua_matrix(lua_State *L) {
   } else if (lua_istable(L, 1)) {
     ravi_matrix_t *m = NULL;
     // we expect an array for each column
-    int cols = (int)lua_objlen(L, 1);
+    int cols = (int)lua_rawlen(L, 1);
     int rows = -1; // don't know how many rows yet
     luaL_argcheck(L, cols > 0, 1, "Table must have at least one column table");
     // test first col
     lua_rawgeti(L, 1, 1);
     if (lua_istable(L, -1)) {
       // all rows are expected to be same length
-      rows = (int)lua_objlen(L, -1);
+      rows = (int)lua_rawlen(L, -1);
     } else {
       luaL_argerror(L, 1, "Expecting (table) array of arrays");
     }
@@ -189,7 +189,7 @@ static int make_Lua_matrix(lua_State *L) {
     for (int j = 1; j <= cols; j++) {
       lua_rawgeti(L, 1, j);
       if (lua_istable(L, -1)) {
-        luaL_argcheck(L, rows == (int)lua_objlen(L, -1), 1,
+        luaL_argcheck(L, rows == (int)lua_rawlen(L, -1), 1,
                       "columns are not the same size");
         for (int k = 1; k <= rows; k++) {
           lua_rawgeti(L, -1, k);
@@ -229,7 +229,7 @@ static int make_Ravi_matrix(lua_State *L) {
     luaL_argcheck(L, rows >= 0, 1, "rows must be >= 0");
     luaL_argcheck(L, cols >= 0, 2, "cols must be >= 0");
     if (lua_gettop(L) == 3 && ravi_is_number_array(L, 3)) {
-      int size = (int)lua_objlen(L, 3);
+      int size = (int)lua_rawlen(L, 3);
       luaL_argcheck(L, size == rows * cols, 3,
                     "data supplied is not of required length");
     } else {
@@ -245,14 +245,14 @@ static int make_Ravi_matrix(lua_State *L) {
   } else if (lua_istable(L, 1)) {
     ravi_matrix_t *m = NULL;
     // we expect an array for each column
-    int cols = (int)lua_objlen(L, 1);
+    int cols = (int)lua_rawlen(L, 1);
     int rows = -1; // don't know how many rows yet
     luaL_argcheck(L, cols > 0, 1, "Table must have at least one column table");
     // test first col
     lua_rawgeti(L, 1, 1);
     if (lua_istable(L, -1)) {
       // all rows are expected to be same length
-      rows = (int)lua_objlen(L, -1);
+      rows = (int)lua_rawlen(L, -1);
     } else {
       luaL_argerror(L, 1, "Expecting (table) array of arrays");
     }
@@ -261,7 +261,7 @@ static int make_Ravi_matrix(lua_State *L) {
     for (int j = 1; j <= cols; j++) {
       lua_rawgeti(L, 1, j);
       if (lua_istable(L, -1)) {
-        luaL_argcheck(L, rows == (int)lua_objlen(L, -1), 1,
+        luaL_argcheck(L, rows == (int)lua_rawlen(L, -1), 1,
                       "columns are not the same size");
         for (int k = 1; k <= rows; k++) {
           lua_rawgeti(L, -1, k);
@@ -298,13 +298,13 @@ static int make_Ravi_vector(lua_State *L) {
     alloc_Ravi_matrix(L, size, 1, initv);
     return 1;
   } else if (lua_gettop(L) == 1 && ravi_is_number_array(L, 1)) {
-    int size = (int)lua_objlen(L, 1);
+    int size = (int)lua_rawlen(L, 1);
     luaL_argcheck(L, size >= 0, 1, "size must be >= 0");
     set_Ravi_matrix_meta(L, size, 1);
     lua_pushvalue(L, -1);
     return 1;
   } else if (lua_istable(L, 1)) {
-    int size = (int)lua_objlen(L, 1);
+    int size = (int)lua_rawlen(L, 1);
     // allocate matrix of 1 column
     ravi_matrix_t *vector = alloc_Ravi_matrix(L, (int)size, 1, 0.0);
     for (int x = 0; x < size; x++) {

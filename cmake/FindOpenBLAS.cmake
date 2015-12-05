@@ -7,8 +7,8 @@ find_path(OPENBLAS_INCLUDE_DIR openblas_config.h
 find_library(OPENBLAS_LIBRARY
   NAMES openblas libopenblas
   PATHS
-  c:/ravi/bin
-  ~/ravi/bin
+  c:/ravi/lib
+  ~/ravi/lib
 )
 
 set( OPENBLAS_INCLUDE_DIRS "${OPENBLAS_INCLUDE_DIR}" )

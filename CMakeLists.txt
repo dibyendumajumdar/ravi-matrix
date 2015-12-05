@@ -112,7 +112,7 @@ if (WIN32)
 elseif(APPLE)
 else()
 endif()
-link_directories("${CMAKE_INSTALL_PREFIX}/bin")
+link_directories("${CMAKE_INSTALL_PREFIX}/lib")
 
 set (RAVIMATRIX_SRCS src/matrixlib.c src/ravi_matrix.c)
 file(GLOB RAVIMATRIX_HEADERS "${PROJECT_SOURCE_DIR}/include/*.h")
@@ -133,7 +133,9 @@ set_target_properties(ravimatrix
 target_link_libraries(ravimatrix ${LAPACK_LIBRARIES} ${LUA_LIBRARIES} 
   ${OPENBLAS_LIBRARIES} ${RAVILUAUTILS_LIBRARIES}) 
 
-install(TARGETS ravimatrix
-        DESTINATION bin)
 install(FILES ${RAVIMATRIX_HEADERS} 
-        DESTINATION include)
+        DESTINATION include/ravi)
+install(TARGETS ravimatrix
+        RUNTIME DESTINATION bin
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib)

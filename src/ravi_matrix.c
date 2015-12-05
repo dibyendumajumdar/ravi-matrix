@@ -44,6 +44,7 @@ ravi_matrix_t *check_Lua_matrix(lua_State *L, int idx) {
 
 // Allocate a Lua matrix as a userdata (compatible with Lua 5.3)
 static ravi_matrix_t *alloc_Lua_matrix(lua_State *L, int m, int n, double initv) {
+  (void)initv;
   assert(m >= 0 && n >= 0);
   assert(sizeof(ravi_matrix_t) == (sizeof(double) * 2));
   ravi_matrix_t *matrix =

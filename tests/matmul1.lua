@@ -1,17 +1,29 @@
 -- Adapted from https://github.com/attractivechaos/plb/blob/master/matmul/matmul_v1.lua
--- dummy cast
+
+-- There are two implementations of matrices
+-- 1. Using Ravi number arrays
+-- 2. Using userdata 
+
+-- The matrix library offers functions for both implementations
+-- The functions that use Ravi number arrays are suffixed with letter R
+-- E.g. matrix() and matrixR()
 
 t=require 'ravimatrix'
+
+-- We first set the locals to point to Lua compatible
+-- userdata implementation
 local matrix, dim, T = t.matrix, t.dim, t.transpose
 local print = print
 
+-- Create a new matrix
 local function mnew(m: integer, n: integer) 
   local A = matrix(m, n, 0)
   print('using ' .. getmetatable(A).type)
   return A
 end
 
--- this version avoids using slices - we operate on the 
+-- Matrix multiplication using Ravi arrays
+-- This version avoids using slices - we operate on the 
 -- one dimensional array
 local function mmul(a: number[], b: number[])
   local t1 = os.clock()
@@ -43,6 +55,7 @@ local function mmul(a: number[], b: number[])
   return x;
 end
 
+-- Matrix multiplication using userdata (Lua compatible) matrices
 -- this version uses userdata implementation
 local function mmul_userdata(a, b)
   local t1 = os.clock()
@@ -74,7 +87,7 @@ local function mmul_userdata(a, b)
   return x;
 end
 
-
+-- Generates a matrix 
 local function gen(n: integer)
   local t1 = os.clock()
   local data = mnew(n, n)
@@ -91,6 +104,7 @@ local function gen(n: integer)
   return data;
 end
 
+-- Compares two matrices
 local function comp(a, b)
   local abs = math.abs
   for i = 1, #a do
@@ -111,25 +125,31 @@ end
 local n = arg[1] or 1000;
 n = math.floor(n/2) * 2;
 
+-- First we run a benchmark using userdata implementation
 local t111 = os.clock()
 local a = mmul_userdata(gen(n), gen(n))
 local t211 = os.clock()
 local control = gen(n) * gen(n)
 assert(comp(a,control))
-print("mmul using Lua Userdata Matrices: total time taken ", t211-t111)
+print("Matrix multiplcation using Lua Userdata Matrices: total time taken ", t211-t111)
 
-matrix=t.matrixR
-T=t.transposeR
-dim=t.dimR
+-- Switch to Ravi number implementation
+-- As these locals are captured as upvalues in the above
+-- function, we can switch the implementation just by
+-- changing the variables!
+matrix = t.matrixR
+T = t.transposeR
+dim = t.dimR
 
 local t1 = os.clock()
 local a = gen(n) * gen(n);
 local t2 = os.clock()
-print("mmul using BLAS: total time taken ", t2-t1)
+print("Matrix multiplication using BLAS: total time taken ", t2-t1)
 
 local t11 = os.clock()
 local a1 = mmul(gen(n), gen(n));
 local t21 = os.clock()
-print("mmul using Ravi Number arrays: total time taken ", t21-t11)
 assert(comp(a,a1))
+print("Matrix multiplication using Ravi Number arrays: total time taken ", t21-t11)
 
+print 'Test OK'

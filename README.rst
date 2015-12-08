@@ -41,9 +41,34 @@ The library is a thin wrapper around BLAS and LAPACK routines. The design has fo
 
 * The idea is that other libraries such as ravi-gsl can build upon the matrix and vector types provided in this library, thereby ensuring that the libraries work for standard Lua as well as providing a faster implementation when used in Ravi.
 
-* The available Lua / Ravi API functions are as follows::
+* The available Lua / Ravi API functions are as follows.
 
-  TODO
+Lua API
+-------
+The Lua compatible API can be accessed via the 'ravimatrix' module::
+
+  local matrix = require 'ravimatrix'
+  
+The available functions are:
+
+*matrix.vector(n [,initvalue])*
+  Creates a column vector of size 'n', and initializes the vector elements to 'initvalue' if supplied else to 0.
+
+::
+
+    local v = matrix.vector(2, 2.0)
+    assert(#v == 2)
+    assert(v[1] == 2.0)
+    assert(v[2] == 2.0)
+
+*matrix.vector(t)*
+  Creates a column vector from supplied table t.
+  
+::
+    
+    local bx = matrix.vector { 10, 7, 43 }
+
+
 
 Building on Windows
 -------------------

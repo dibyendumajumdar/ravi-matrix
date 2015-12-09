@@ -102,8 +102,11 @@ static ravi_matrix_t *check_Ravi_matrix(lua_State *L, int arg_index) {
 #endif
 
 // Create a Lua vector (Lua matrix with one column)
-// arg1 - size
-// arg2 - initial value (optional)
+// Interface 1
+//   arg1 - size
+//   arg2 - initial value (optional)
+// Interface 2
+//   arg1 - table
 static int make_Lua_vector(lua_State *L) {
   if (lua_isnumber(L, 1)) {
     int size = (int)lua_tointeger(L, 1);
@@ -141,7 +144,7 @@ static int make_Lua_vector(lua_State *L) {
 //   arg2 - columns
 //   arg3 - table of values in column order (optional)
 // Interface 3
-//   arg1 - table of tables - outer table is columns
+//   arg1 - table of tables - each inner table represents a column
 static int make_Lua_matrix(lua_State *L) {
   int top = lua_gettop(L);
   if (top >= 2 && lua_isnumber(L, 1) && lua_isnumber(L, 2)) {

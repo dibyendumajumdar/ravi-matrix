@@ -51,8 +51,8 @@ The Lua compatible API can be accessed via the 'ravimatrix' module::
   
 The available functions are:
 
-*matrix.vector(n [,initvalue])*
-  Creates a column vector of size 'n', and initializes the vector elements to 'initvalue' if supplied else to 0.
+*matrix.vector(n: integer [,initialvalue: number])*
+  Creates a column vector of size 'n', and initializes the vector elements to 'initialvalue' if supplied else to 0.
 
 ::
 
@@ -61,14 +61,78 @@ The available functions are:
     assert(v[1] == 2.0)
     assert(v[2] == 2.0)
 
-*matrix.vector(t)*
+*matrix.vector(t: table)*
   Creates a column vector from supplied table t.
   
 ::
     
     local bx = matrix.vector { 10, 7, 43 }
 
+*matrix.matrix(m: integer, n: integer [, initialvalue: number])*
+  Creates a matrix of 'm' rows, 'n' columns; and the elements are initialized to 'initialvalue' if supplied else to 0.
 
+*matrix.matrix(m: integer, n: integer, t: table)*
+  Creates a matrix of 'm' rows, 'n' columns and initializes using the data in table 't'; the table is interpreted in column major order.
+
+*matrix.matrix(t: table)*
+  Creates a matrix from supplied table, which must be a table of tables; the each inner table representing a column.
+
+::
+
+    -- 3x3 matrix A
+    -- 76 25 11
+    -- 27 89 51
+    -- 18 60 32
+
+    local A = matrix.matrix { {76,27,18}, {25,89,60}, {11,51,32} }
+
+Ravi API
+--------
+The Ravi API is not compatible with Lua as it requires the use of number arrays. A number of the Lua API methods have counterparts in Ravi API.
+
+*matrix.vectorR(n: integer [,initialvalue: number])*
+  Creates a column vector of size 'n', and initializes the vector elements to 'initialvalue' if supplied else to 0.
+
+::
+
+    local v: number[] = matrix.vector(2, 2.0)
+    assert(#v == 2)
+    assert(v[1] == 2.0)
+    assert(v[2] == 2.0)
+
+*matrix.vectorR(t: table)*
+  Creates a column vector from supplied table t.
+  
+::
+    
+    local bx: number[] = matrix.vector { 10, 7, 43 }
+
+*matrix.vectorR(t: number[])*
+  Converts the supplied number[] to a vector by attaching a metatable.
+  
+::
+    
+    local data: number[] = { 10, 7, 43 }
+    local bx: number[] = matrix.vector(data) 
+
+
+*matrix.matrixR(m: integer, n: integer [, initialvalue: number])*
+  Creates a matrix of 'm' rows, 'n' columns; and the elements are initialized to 'initialvalue' if supplied else to 0.
+
+*matrix.matrixR(m: integer, n: integer, t: number[])*
+  Converts the supplied number[] object to a matrix of 'm' rows, 'n' columns by attaching a metatable.
+
+*matrix.matrixR(t: table)*
+  Creates a matrix from supplied table, which must be a table of tables; the each inner table representing a column.
+
+::
+
+    -- 3x3 matrix A
+    -- 76 25 11
+    -- 27 89 51
+    -- 18 60 32
+
+    local A: number[] = matrix.matrix { {76,27,18}, {25,89,60}, {11,51,32} }
 
 Building on Windows
 -------------------

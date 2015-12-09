@@ -95,7 +95,7 @@ The Ravi API is not compatible with Lua as it requires the use of number arrays.
 
 ::
 
-    local v: number[] = matrix.vector(2, 2.0)
+    local v: number[] = matrix.vectorR (2, 2.0)
     assert(#v == 2)
     assert(v[1] == 2.0)
     assert(v[2] == 2.0)
@@ -105,7 +105,7 @@ The Ravi API is not compatible with Lua as it requires the use of number arrays.
   
 ::
     
-    local bx: number[] = matrix.vector { 10, 7, 43 }
+    local bx: number[] = matrix.vectorR { 10, 7, 43 }
 
 *matrix.vectorR(t: number[])*
   Converts the supplied number[] to a vector by attaching a metatable.
@@ -113,7 +113,7 @@ The Ravi API is not compatible with Lua as it requires the use of number arrays.
 ::
     
     local data: number[] = { 10, 7, 43 }
-    local bx: number[] = matrix.vector(data) 
+    local bx: number[] = matrix.vectorR (data) 
 
 
 *matrix.matrixR(m: integer, n: integer [, initialvalue: number])*
@@ -132,7 +132,7 @@ The Ravi API is not compatible with Lua as it requires the use of number arrays.
     -- 27 89 51
     -- 18 60 32
 
-    local A: number[] = matrix.matrix { {76,27,18}, {25,89,60}, {11,51,32} }
+    local A: number[] = matrix.matrixR { {76,27,18}, {25,89,60}, {11,51,32} }
 
 Building on Windows
 -------------------

@@ -225,6 +225,8 @@ static int make_Lua_matrix(lua_State *L) {
 //   arg1 - rows
 //   arg2 - cols
 //   arg3 - Ravi number array that will be converted
+// Interface 3
+//   arg1 - table of tables - each inner table represents a column
 static int make_Ravi_matrix(lua_State *L) {
   int top = lua_gettop(L);
   if (top >= 2 && lua_isnumber(L, 1) && lua_isnumber(L, 2)) {

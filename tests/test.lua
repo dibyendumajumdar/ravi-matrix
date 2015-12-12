@@ -98,7 +98,9 @@ function comp(a: number[], b: number[])
   return true
 end
 --ravi.dumplua(comp)
-assert(ravi.compile(comp))
+if ravi.jit() then
+  assert(ravi.compile(comp))
+end
 
 Z=t.copyR(B)
 assert(comp(B, Z))

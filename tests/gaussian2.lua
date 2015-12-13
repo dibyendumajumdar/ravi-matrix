@@ -54,16 +54,6 @@ local function partial_pivot(columns: table, nrow: integer[], i: integer, n: int
   end
 end
 
-local function checkexpected(A: number[], b: number[])
-  local expectedA: number[] = matrix { {4,0,0}, {2,1,0}, {1,3,2} }
-  local expectedb: number[] = vector { 3,2,2 }
-
-  assert(comp(A, expectedA))
-  assert(comp(b, expectedb))
-
-  write('checked elimination OK', "\n")
-end
-
 local function dump_matrix(columns: table, m: integer, n: integer, nrow: integer[])
   for i = 1,m do
     for j = 1,n do
@@ -115,9 +105,8 @@ local function gaussian_solve(A: number[], b: number[])
       -- obtain the column j
       local column: number[] = @number[]( columns[j] ) 
       local multiplier: number = column[nrow[i]]/column[nrow[j]]
-      write('multiplier = ', column[nrow[i]], ' / ', column[nrow[j]], "\n")
-      write('Performing R(' .. i .. ') = R(' .. i .. ') - m(' .. i .. ',' .. j .. ') * R(' .. j .. '); ', 
-            'm(' .. i .. ',' .. j .. ') = ', multiplier, "\n")
+      write('m(' .. i .. ',' .. j .. ') = ', column[nrow[i]], ' / ', column[nrow[j]], "\n")
+      write('Performing R(' .. i .. ') = R(' .. i .. ') - m(' .. i .. ',' .. j .. ') * R(' .. j .. ')\n')
       -- For the row i, we need to 
       -- do row(i) = row(i) - multipler * row(j)
       for q = j,n+1 do
@@ -126,7 +115,7 @@ local function gaussian_solve(A: number[], b: number[])
       end
     end
 
-    write("post elimination\n")
+    write("Post elimination column ", j, "\n")
     dump_matrix(columns, n, n+1, nrow)
   end
 
@@ -139,17 +128,25 @@ local function gaussian_solve(A: number[], b: number[])
   local x: number[] = numarray(n, 0.0)
   local a: number[] = @number[]( columns[n] )
 
+  write('Performing back substitution\n')
   x[n] = b[nrow[n]] / a[nrow[n]]
+  write('x[', n, '] = b[', n, '] / a[', n, '] = ', x[n], "\n")
   for i = n-1,1,-1 do
     local sum: number
     for j = i+1, n do
       a = @number[]( columns[j] )
-      write('i = ', nrow[i], ', a[i] = ', a[nrow[i]], ', j = ', j, ', x[j] = ', x[j], "\n")
       sum = sum + a[nrow[i]] * x[j]
+      if j == i+1 then
+        write('sum = ')
+      else 
+        write('sum = sum + ')  
+      end
+      write('a[', i, ', ', j, '] * x[', j, ']', "\n")
     end
+    write('sum = ', sum, '\n')
     a = @number[]( columns[i] )
-    write('x[',i,'] = (b[', nrow[i], ']:', b[nrow[i]], ' - ', sum, ') / a[', nrow[i], ']:', a[nrow[i]], "\n")  
     x[i] = (b[nrow[i]] - sum) / a[nrow[i]]
+    write('x[',i,'] = (b[', i, '] - sum) / a[', i, ', ', i, '] = ', x[i], "\n")  
   end  
 
   return x
@@ -163,7 +160,7 @@ local expectedx: number[] = solve(A, b) -- vector { 1,-1,1 }
 local x:number[] = gaussian_solve(A, b)
 
 print('expected ', table.unpack(expectedx))
-print('got ', table.unpack(x))
+print('got      ', table.unpack(x))
 assert(comp(x, expectedx))
 
 A = matrix { {2,6,4}, {1,-1,3}, {-1,-9,1} }
@@ -173,7 +170,7 @@ expectedx = solve(A, b)
 x = gaussian_solve(A, b)
 
 print('expected ', table.unpack(expectedx))
-print('got ', table.unpack(x))
+print('got      ', table.unpack(x))
 assert(comp(x, expectedx))
 
 A = matrix { {0,1,2,1}, {1,1,2,2}, {1,2,4,1}, {1,1,0,1} }
@@ -183,8 +180,9 @@ expectedx = solve(A, b)
 x = gaussian_solve(A, b)
 
 print('expected ', table.unpack(expectedx))
-print('got ', table.unpack(x))
+print('got      ', table.unpack(x))
 assert(comp(x, expectedx))
 
+print 'Ok'
 --ravi.dumplua(gaussian_solve)
 --ravi.dumplua(partial_pivot)

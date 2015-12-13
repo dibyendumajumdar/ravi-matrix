@@ -44,6 +44,11 @@ local function gaussian_elimination(A: number[], b: number[])
   end
   columns[n+1] = b
 
+  -- initialize the nrow vector
+  for i = 1,n do
+    nrow[i] = i
+  end
+
   for j = 1,n-1 do -- j is the column
     for i = j+1,m do -- i is the row
       -- obtain the column j

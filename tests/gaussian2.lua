@@ -2,7 +2,7 @@
 
 local ravimatrix = require 'ravimatrix'
 local assert = assert
-local vector, matrix, dim = ravimatrix.vectorR, ravimatrix.matrixR, ravimatrix.dimR
+local vector, matrix, dim, copy, solve = ravimatrix.vectorR, ravimatrix.matrixR, ravimatrix.dimR, ravimatrix.copyR, ravimatrix.solveR
 local slice, numarray, intarray = table.slice, table.numarray, table.intarray
 local write = io.write
 
@@ -46,7 +46,21 @@ local function partial_pivot(columns: table, nrow: integer[], i: integer, n: int
   end
 end
 
-local function gaussian_elimination(A: number[], b: number[])
+local function checkexpected(A: number[], b: number[])
+  local expectedA: number[] = matrix { {4,0,0}, {2,1,0}, {1,3,2} }
+  local expectedb: number[] = vector { 3,2,2 }
+
+  assert(comp(A, expectedA))
+  assert(comp(b, expectedb))
+
+  write('checked elimination OK', "\n")
+end
+
+local function gaussian_solve(A: number[], b: number[], callback)
+
+  -- make copies
+  A = copy(A)
+  b = copy(b)
 
   local m: integer, n: integer = dim(A)
   assert(m == n)
@@ -85,28 +99,55 @@ local function gaussian_elimination(A: number[], b: number[])
 
     for i = j+1,m do -- i is the row
       -- obtain the column j
-      local column: number[] = @number[] (columns[j]) 
+      local column: number[] = @number[]( columns[j] ) 
       local multiplier: number = column[nrow[i]]/column[nrow[j]]
       write('Performing R(' .. i .. ') = R(' .. i .. ') - m(' .. nrow[i] .. ',' .. j .. ') * R(' .. nrow[j] .. '); ', 
             'm(' .. nrow[i] .. ',' .. j .. ') = ', multiplier, "\n")
       -- For the row i, we need to 
       -- do row(i) = row(i) - multipler * row(j)
       for q = j,n+1 do
-      	local col: number[] = @number[] (columns[q])
+      	local col: number[] = @number[]( columns[q] )
         col[nrow[i]] = col[nrow[i]] - multiplier*col[nrow[j]]
       end
   	end
   end
+
+  if columns[n][n] == 0.0 then
+    error("no unique solution exists")
+  end
+
+  if callback then 
+    callback(A, b) 
+  end
+
+  -- Now we do the back substitution
+  local x: number[] = numarray(n, 0.0)
+  local a: number[] = @number[]( columns[n] )
+
+  x[n] = b[nrow[n]] / a[nrow[n]]
+  for i = n-1,1,-1 do
+    local sum: number
+    for j = i+1, n do
+      a = @number[]( columns[j] )
+      write('i = ', nrow[i], ', a[i] = ', a[nrow[i]], ', j = ', j, ', x[j] = ', x[j], "\n")
+      sum = sum + a[nrow[i]] * x[j]
+    end
+    a = @number[]( columns[i] )
+    write('x[',i,'] = (b[', nrow[i], ']:', b[nrow[i]], ' - ', sum, ') / a[', nrow[i], ']:', a[nrow[i]], "\n")  
+    x[i] = (b[nrow[i]] - sum) / a[nrow[i]]
+  end  
+
+  return x
 end
 
 local A: number[] = matrix { {4,8,-4}, {2,5,1}, {1,5,10} }
 local b: number[] = vector { 3,8,5 }
 
--- ravi.dumplua(gaussian_elimination)
-gaussian_elimination(A, b)
+-- control (LAPACK solve)
+local expectedx: number[] = solve(A, b) -- vector { 1,-1,1 }
+local x:number[] = gaussian_solve(A, b, checkexpected)
 
-local expectedA: number[] = matrix { {4,0,0}, {2,1,0}, {1,3,2} }
-local expectedb: number[] = vector { 3,2,2 }
+assert(comp(x, expectedx))
 
-assert(comp(A, expectedA))
-assert(comp(b, expectedb))
+--ravi.dumplua(gaussian_solve)
+--ravi.dumplua(partial_pivot)

@@ -20,6 +20,32 @@ local function comp(a: number[], b: number[])
   return true
 end
 
+-- i = column
+local function partial_pivot(columns: table, nrow: integer[], i: integer, n: integer)
+  local p: integer = i
+  local max: number = 0.0
+  local a: number[] = @number[]( columns[i] )
+
+  -- find the row from i to n that has
+  -- max absolute value in column[i]
+  for row=i, n do
+    local value: number = a[row]
+    if value < 0.0 then value = -value end
+    if value > max then
+      p = i
+      max = value
+    end
+  end
+  if a[p] == 0.0 then 
+    error("no unique solution exists")
+  end
+  if nrow[i] ~= nrow[p] then
+    local temp: integer = nrow[i]
+    nrow[i] = nrow[p]
+    nrow[p] = temp
+  end
+end
+
 local function gaussian_elimination(A: number[], b: number[])
 
   local m: integer, n: integer = dim(A)
@@ -50,17 +76,24 @@ local function gaussian_elimination(A: number[], b: number[])
   end
 
   for j = 1,n-1 do -- j is the column
+    partial_pivot(columns, nrow, j, m)
+
+    -- debug
+    for t=j,#nrow do 
+      write('row order for column ' .. j .. ' is nrow[' .. nrow[t] .. ']', "\n")
+    end
+
     for i = j+1,m do -- i is the row
       -- obtain the column j
       local column: number[] = @number[] (columns[j]) 
-      local multiplier: number = column[i]/column[j]
-      write('Performing R(' .. i .. ') = R(' .. i .. ') - m(' .. i .. ',' .. j .. ') * R(' .. j .. '); ', 
-            'm(' .. i .. ',' .. j .. ') = ', multiplier, "\n")
+      local multiplier: number = column[nrow[i]]/column[nrow[j]]
+      write('Performing R(' .. i .. ') = R(' .. i .. ') - m(' .. nrow[i] .. ',' .. j .. ') * R(' .. nrow[j] .. '); ', 
+            'm(' .. nrow[i] .. ',' .. j .. ') = ', multiplier, "\n")
       -- For the row i, we need to 
       -- do row(i) = row(i) - multipler * row(j)
       for q = j,n+1 do
       	local col: number[] = @number[] (columns[q])
-        col[i] = col[i] - multiplier*col[j]
+        col[nrow[i]] = col[nrow[i]] - multiplier*col[nrow[j]]
       end
   	end
   end

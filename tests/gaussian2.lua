@@ -6,16 +6,10 @@ local vector, matrix, dim, copy, solve = ravimatrix.vectorR, ravimatrix.matrixR,
 local slice, numarray, intarray = table.slice, table.numarray, table.intarray
 local write = io.write
 
-local function cast(a)
-	return a
-end
-
 local function comp(a: number[], b: number[])
   local abs = math.abs
   for i = 1, #a do
     if abs(a[i] - b[i]) > 1e-10 then
-      print("a = ", table.unpack(a))
-      print("b = ", table.unpack(b))
       return false
     end
   end

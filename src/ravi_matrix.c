@@ -25,8 +25,6 @@
 #include <ravi_matrixlib.h>
 #include <ravi_lua_utils.h>
 
-#define RAVI_ENABLED 1
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <assert.h>

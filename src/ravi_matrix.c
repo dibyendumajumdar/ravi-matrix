@@ -362,12 +362,9 @@ static int Lua_matrix_mult(lua_State *L) {
   ravi_matrix_t *A = check_Lua_matrix(L, 1);
   ravi_matrix_t *B = check_Lua_matrix(L, 2);
   luaL_argcheck(L, A->n == B->m, 1, "matrices are not multiplicable");
-  ravi_matrix_t *matrix = alloc_Lua_matrix(L, A->m, B->n, 0.0);
+  ravi_matrix_t *C = alloc_Lua_matrix(L, A->m, B->n, 0.0);
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
-  if (!ops->multiply(matrix, A, B, false, false)) {
-    luaL_error(L, "matrix multiplication failed");
-    return 0;
-  }
+  ops->multiply(A->m, A->n, A->data, B->m, B->n, B->data, C->m, C->n, C->data, false, false, 1.0, 0.0);
   return 1;
 }
 
@@ -469,12 +466,9 @@ static int Ravi_matrix_mult(lua_State *L) {
   ravi_matrix_t *A = check_Ravi_matrix(L, 1);
   ravi_matrix_t *B = check_Ravi_matrix(L, 2);
   luaL_argcheck(L, A->n == B->m, 1, "matrices are not multiplicable");
-  ravi_matrix_t *matrix = alloc_Ravi_matrix(L, A->m, B->n, 0.0);
+  ravi_matrix_t *C = alloc_Ravi_matrix(L, A->m, B->n, 0.0);
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
-  if (!ops->multiply(matrix, A, B, false, false)) {
-    luaL_error(L, "matrix multiplication failed");
-    return 0;
-  }
+  ops->multiply(A->m, A->n, A->data, B->m, B->n, B->data, C->m, C->n, C->data, false, false, 1.0, 0.0);
   return 1;
 }
 

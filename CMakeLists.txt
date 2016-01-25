@@ -139,3 +139,8 @@ install(TARGETS ravimatrix
         RUNTIME DESTINATION bin
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib)
+
+add_executable(test_matrix testsrc/test_matrix.c)
+target_link_libraries(test_matrix ravimatrix)
+
+add_test(TestMatrix test_matrix)

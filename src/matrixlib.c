@@ -95,35 +95,153 @@ extern void dgetri_(int *n, double *a, int *lda, int *ipiv, double *work,
 
 // Internal workhorse for matrix multiplication
 // workhorse for matrix multiplication
-// C=A*B
-static bool matrix_multiply(ravi_matrix_t *C, ravi_matrix_t *A, ravi_matrix_t *B,
-                            bool transposeA, bool transposeB) {
-  int m = A->m;
-  int n = B->n;
-  int k = A->n;
-  if (C->m != m || C->n != n || B->m != k) {
-    fprintf(stderr, "Dimensions are unexpected: A.m=%d, A.n=%d, B.m=%d, "
-                    "B.n=%d, C.m=%d, C.n=%d\n",
-            A->m, A->n, B->m, B->n, C->m, C->n);
-    return false;
-  }
-  double alpha = 1.0;
-  double beta = 0.0;
-
-  double *c = &C->data[0];
-  double *a = &A->data[0];
-  double *b = &B->data[0];
-
+// C=alpha*A*B + beta*C
+// dgemm wrapper
+static void matrix_multiply(int32_t rows_A, int32_t cols_A, double *a, int32_t rows_B, int32_t cols_B, double *b,
+  int32_t rows_C, int32_t cols_C, double *c, bool transposeA,
+  bool transposeB, double alpha, double beta) {
+  int m = transposeA ? cols_A : rows_A; /* If transposing then m = columns(A) else rows(A) */
+  int n = transposeB ? rows_B : cols_B; /* If transposing then n = rows(B) else columns(B) */ 
+  int k = transposeA ? rows_A : cols_A; /* If transposing A then k = rows(A) else columns(A) */
+  assert(rows_C == m);
+  assert(cols_C == n);
+  int lda = rows_A;
+  int ldb = rows_B;
+  int ldc = rows_C;
+  /*
+  *  Definition:
+  *  ===========
+  *
+  *       SUBROUTINE DGEMM(TRANSA,TRANSB,M,N,K,ALPHA,A,LDA,B,LDB,BETA,C,LDC)
+  *
+  *       .. Scalar Arguments ..
+  *       DOUBLE PRECISION ALPHA,BETA
+  *       INTEGER K,LDA,LDB,LDC,M,N
+  *       CHARACTER TRANSA,TRANSB
+  *       ..
+  *       .. Array Arguments ..
+  *       DOUBLE PRECISION A(LDA,*),B(LDB,*),C(LDC,*)
+  *       ..
+  *
+  *
+  * Purpose:
+  * =============
+  *
+  * DGEMM  performs one of the matrix-matrix operations
+  *
+  *    C := alpha*op( A )*op( B ) + beta*C,
+  *
+  * where  op( X ) is one of
+  *
+  *    op( X ) = X   or   op( X ) = X**T,
+  *
+  * alpha and beta are scalars, and A, B and C are matrices, with op( A )
+  * an m by k matrix,  op( B )  a  k by n matrix and  C an m by n matrix.
+  *
+  * Arguments:
+  * ==========
+  *
+  * [in] TRANSA
+  *          TRANSA is CHARACTER*1
+  *           On entry, TRANSA specifies the form of op( A ) to be used in
+  *           the matrix multiplication as follows:
+  *
+  *              TRANSA = 'N' or 'n',  op( A ) = A.
+  *
+  *              TRANSA = 'T' or 't',  op( A ) = A**T.
+  *
+  *              TRANSA = 'C' or 'c',  op( A ) = A**T.
+  *
+  *  [in] TRANSB
+  *          TRANSB is CHARACTER*1
+  *           On entry, TRANSB specifies the form of op( B ) to be used in
+  *           the matrix multiplication as follows:
+  *
+  *              TRANSB = 'N' or 'n',  op( B ) = B.
+  *
+  *              TRANSB = 'T' or 't',  op( B ) = B**T.
+  *
+  *              TRANSB = 'C' or 'c',  op( B ) = B**T.
+  *
+  *  [in] M
+  *          M is INTEGER
+  *           On entry,  M  specifies  the number  of rows  of the  matrix
+  *           op( A )  and of the  matrix  C.  M  must  be at least  zero.
+  *
+  *  [in] N
+  *          N is INTEGER
+  *           On entry,  N  specifies the number  of columns of the matrix
+  *           op( B ) and the number of columns of the matrix C. N must be
+  *           at least zero.
+  *
+  *  [in] K
+  *          K is INTEGER
+  *           On entry,  K  specifies  the number of columns of the matrix
+  *           op( A ) and the number of rows of the matrix op( B ). K must
+  *           be at least  zero.
+  *
+  *  [in] ALPHA
+  *          ALPHA is DOUBLE PRECISION.
+  *           On entry, ALPHA specifies the scalar alpha.
+  *
+  *  [in] A
+  *          A is DOUBLE PRECISION array of DIMENSION ( LDA, ka ), where ka is
+  *           k  when  TRANSA = 'N' or 'n',  and is  m  otherwise.
+  *           Before entry with  TRANSA = 'N' or 'n',  the leading  m by k
+  *           part of the array  A  must contain the matrix  A,  otherwise
+  *           the leading  k by m  part of the array  A  must contain  the
+  *           matrix A.
+  *
+  *  [in] LDA
+  *          LDA is INTEGER
+  *           On entry, LDA specifies the first dimension of A as declared
+  *           in the calling (sub) program. When  TRANSA = 'N' or 'n' then
+  *           LDA must be at least  max( 1, m ), otherwise  LDA must be at
+  *           least  max( 1, k ).
+  *
+  *  [in] B
+  *          B is DOUBLE PRECISION array of DIMENSION ( LDB, kb ), where kb is
+  *           n  when  TRANSB = 'N' or 'n',  and is  k  otherwise.
+  *           Before entry with  TRANSB = 'N' or 'n',  the leading  k by n
+  *           part of the array  B  must contain the matrix  B,  otherwise
+  *           the leading  n by k  part of the array  B  must contain  the
+  *           matrix B.
+  *
+  *  [in] LDB
+  *          LDB is INTEGER
+  *           On entry, LDB specifies the first dimension of B as declared
+  *           in the calling (sub) program. When  TRANSB = 'N' or 'n' then
+  *           LDB must be at least  max( 1, k ), otherwise  LDB must be at
+  *           least  max( 1, n ).
+  *
+  *  [in] BETA
+  *          BETA is DOUBLE PRECISION.
+  *           On entry,  BETA  specifies the scalar  beta.  When  BETA  is
+  *           supplied as zero then C need not be set on input.
+  *
+  *  [in,out] C
+  *          C is DOUBLE PRECISION array of DIMENSION ( LDC, n ).
+  *           Before entry, the leading  m by n  part of the array  C must
+  *           contain the matrix  C,  except when  beta  is zero, in which
+  *           case C need not be set on entry.
+  *           On exit, the array  C  is overwritten by the  m by n  matrix
+  *           ( alpha*op( A )*op( B ) + beta*C ).
+  *
+  *  [in] LDC
+  *          LDC is INTEGER
+  *           On entry, LDC specifies the first dimension of C as declared
+  *           in  the  calling  (sub)  program.   LDC  must  be  at  least
+  *           max( 1, m ).
+  */
 #if __APPLE__
   cblas_dgemm(CblasColMajor, transposeA ? CblasTrans : CblasNoTrans,
-              transposeB ? CblasTrans : CblasNoTrans, m, n, k, alpha, a, m, b,
-              k, beta, c, m);
+              transposeB ? CblasTrans : CblasNoTrans, m, n, k, alpha, a, lda, b,
+              ldb, beta, c, ldc);
 #else
   char transa = transposeA ? 'T' : 'N';
   char transb = transposeB ? 'T' : 'N';
-  dgemm_(&transa, &transb, &m, &n, &k, &alpha, a, &m, b, &k, &beta, c, &m);
+  dgemm_(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 #endif
-  return true;
 }
 
 static double matrix_norm1(ravi_matrix_t *A) {

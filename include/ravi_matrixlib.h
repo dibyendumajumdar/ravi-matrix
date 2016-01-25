@@ -50,9 +50,18 @@ struct ravi_matrix_t {
 typedef struct ravi_matrix_ops_t ravi_matrix_ops_t;
 struct ravi_matrix_ops_t {
   // workhorse for matrix multiplication
-  // C=A*B
-  bool (*multiply)(ravi_matrix_t *C, ravi_matrix_t *A, ravi_matrix_t *B, bool transposeA,
-                   bool transposeB);
+  // C=alpha*A*B + beta*C
+  // Simple wrapper around dgemm
+  // rows_A = number of rows in A
+  // cols_A = number of columns in A
+  // rows_B = number of rows in B
+  // cols_B = number of columns in B
+  // rows_C = number of rows in C
+  // cols_C = number of columns in C
+  // To perform C=A*B set alpha to 1.0 and beta to 0.0
+  void (*multiply)(int32_t rows_A, int32_t cols_A, double *A, int32_t rows_B, int32_t cols_B, double *B, 
+                   int32_t rows_C, int32_t cols_C, double *C, bool transposeA,
+                   bool transposeB, double alpha, double beta);
 
   double (*norm1)(ravi_matrix_t *A);
 

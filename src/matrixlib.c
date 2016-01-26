@@ -69,6 +69,7 @@ extern void dgetri_(int *n, double *a, int *lda, int *ipiv, double *work,
 #elif defined(USE_OPENBLAS)
 #include <openblas_config.h>
 #include <f77blas.h>
+#include <cblas.h>
 extern void dgelsd_(int *m, int *n, int *nrhs, double *a, int *lda, double *b,
                     int *ldb, double *s, double *rcond, int *rank, double *work,
                     int *lwork, int *iwork, int *info);
@@ -233,7 +234,7 @@ static void matrix_multiply(int32_t rows_A, int32_t cols_A, double *a, int32_t r
   *           in  the  calling  (sub)  program.   LDC  must  be  at  least
   *           max( 1, m ).
   */
-#if __APPLE__
+#if defined(__APPLE__) || defined(USE_OPENBLAS)
   cblas_dgemm(CblasColMajor, transposeA ? CblasTrans : CblasNoTrans,
               transposeB ? CblasTrans : CblasNoTrans, m, n, k, alpha, a, lda, b,
               ldb, beta, c, ldc);
@@ -566,28 +567,21 @@ static bool matrix_inverse(ravi_matrix_t *a) {
   return true;
 }
 
-static void matrix_transpose(ravi_matrix_t *result, const ravi_matrix_t *m) {
-  assert(result->n == m->m && result->m == m->n);
-  if (m->m <= 0 || m->n <= 0)
-    return;
-#if 0 // USE_OPENBLAS (for some reason link fails)
-  char ordering = 'C';
-  char transpose = 'T';
+static void matrix_transpose(uint32_t rows, uint32_t cols, double *b, const double *a) {
+#if USE_OPENBLAS
   double scale = 1.0;
-  int rows = m->m;
-  int cols = m->n;
   int lda = max(1, rows);
   int ldb = max(1, cols);
-  domatcopy_(&ordering, &transpose, &rows, &cols, &scale, &m->data[0], &lda, &result->data[0], &ldb);
+  cblas_domatcopy(CblasColMajor, CblasTrans, rows, cols, scale, a, lda, b, ldb);
 #else
   /*
     result is column order so we can use
     more optimimised iterator
   */
-  double *rp = &result->data[0];
-  for (int32_t i = 0; i < m->m; i++) {
-    for (int32_t j = 0; j < m->n; j++) {
-      *rp++ = m->data[j * m->m + i];
+  double *rp = b;
+  for (int32_t i = 0; i < rows; i++) {
+    for (int32_t j = 0; j < cols; j++) {
+      *rp++ = a[j * rows + i];
     }
   }
 #endif

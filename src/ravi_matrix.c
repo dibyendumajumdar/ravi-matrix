@@ -449,7 +449,7 @@ static int Lua_matrix_transpose(lua_State *L) {
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
   ravi_matrix_t *A = check_Lua_matrix(L, 1);
   ravi_matrix_t *M = alloc_Lua_matrix(L, A->n, A->m, 0.0);
-  ops->transpose(M, A);
+  ops->transpose(A->m, A->n, M->data, A->data);
   return 1;
 }
 
@@ -553,7 +553,7 @@ static int Ravi_matrix_transpose(lua_State *L) {
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
   ravi_matrix_t *A = check_Ravi_matrix(L, 1);
   ravi_matrix_t *M = alloc_Ravi_matrix(L, A->n, A->m, 0.0);
-  ops->transpose(M, A);
+  ops->transpose(A->m, A->n, M->data, A->data);
   return 1;
 }
 

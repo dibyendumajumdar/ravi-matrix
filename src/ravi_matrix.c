@@ -21,13 +21,13 @@
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ******************************************************************************/
 
+#include <ravi_lua_utils.h>
 #include <ravi_matrix.h>
 #include <ravi_matrixlib.h>
-#include <ravi_lua_utils.h>
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <assert.h>
 
 // We need fixed pointer values for metatable keys
 static const char *Lua_matrix = "Lua.matrix";
@@ -41,7 +41,8 @@ ravi_matrix_t *check_Lua_matrix(lua_State *L, int idx) {
 }
 
 // Allocate a Lua matrix as a userdata (compatible with Lua 5.3)
-static ravi_matrix_t *alloc_Lua_matrix(lua_State *L, int m, int n, double initv) {
+static ravi_matrix_t *alloc_Lua_matrix(lua_State *L, int m, int n,
+                                       double initv) {
   (void)initv;
   assert(m >= 0 && n >= 0);
   assert(sizeof(ravi_matrix_t) == (sizeof(double) * 2));
@@ -70,7 +71,7 @@ static ravi_matrix_t *set_Ravi_matrix_meta(lua_State *L, int m, int n) {
 }
 
 static ravi_matrix_t *alloc_Ravi_matrix(lua_State *L, int m, int n,
-                                          double initv) {
+                                        double initv) {
   ravi_create_number_array(L, m * n, initv);
   return set_Ravi_matrix_meta(L, m, n);
 }
@@ -80,11 +81,12 @@ static ravi_matrix_t *alloc_Ravi_matrix(lua_State *L, int m, int n,
 static ravi_matrix_t *test_Ravi_matrix(lua_State *L, int arg_index) {
   if (ravi_is_number_array(L, arg_index)) { // value is a Ravi array?
     if (lua_getmetatable(L, arg_index)) {   // does it have a metatable?
-      raviU_getmetatable(L, Ravi_matrix);       // Get metatable for Ravi matrices
+      raviU_getmetatable(L, Ravi_matrix);   // Get metatable for Ravi matrices
       if (lua_rawequal(L, -1, -2)) { // compare: does it have the correct mt?
         lua_pop(L, 2);               // remove both metatables
-        return (ravi_matrix_t *)ravi_get_number_array_rawdata(L,
-                                                         arg_index); // test ok
+        return (ravi_matrix_t *)ravi_get_number_array_rawdata(
+            L,
+            arg_index); // test ok
       }
     }
   }
@@ -344,7 +346,7 @@ static int Lua_vector_set(lua_State *L) {
   ravi_matrix_t *vector = check_Lua_matrix(L, 1);
   int pos = (int)luaL_checkinteger(L, 2);
   luaL_argcheck(L, pos >= 1 && pos <= (vector->m * vector->n), 2,
-    "write access out of bounds");
+                "write access out of bounds");
   lua_Number val = luaL_checknumber(L, 3);
   vector->data[pos - 1] = val;
   return 0;
@@ -364,7 +366,8 @@ static int Lua_matrix_mult(lua_State *L) {
   luaL_argcheck(L, A->n == B->m, 1, "matrices are not multiplicable");
   ravi_matrix_t *C = alloc_Lua_matrix(L, A->m, B->n, 0.0);
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
-  ops->multiply(A->m, A->n, A->data, B->m, B->n, B->data, C->m, C->n, C->data, false, false, 1.0, 0.0);
+  ops->multiply(A->m, A->n, A->data, B->m, B->n, B->data, C->m, C->n, C->data,
+                false, false, 1.0, 0.0);
   return 1;
 }
 
@@ -397,6 +400,25 @@ static int Lua_matrix_copy(lua_State *L) {
   ravi_matrix_t *matrix = alloc_Lua_matrix(L, A->m, A->n, 0.0);
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
   ops->copy(matrix, A);
+  return 1;
+}
+
+static int Lua_matrix_norm1(lua_State *L) {
+  ravi_matrix_t *A = check_Lua_matrix(L, 1);
+  const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
+  lua_pushnumber(L, ops->norm(A->m, A->n, A->data, RAVI_MATRIX_NORM_ONE));
+  return 1;
+}
+static int Lua_matrix_normI(lua_State *L) {
+  ravi_matrix_t *A = check_Lua_matrix(L, 1);
+  const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
+  lua_pushnumber(L, ops->norm(A->m, A->n, A->data, RAVI_MATRIX_NORM_INFINITY));
+  return 1;
+}
+static int Lua_matrix_normF(lua_State *L) {
+  ravi_matrix_t *A = check_Lua_matrix(L, 1);
+  const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
+  lua_pushnumber(L, ops->norm(A->m, A->n, A->data, RAVI_MATRIX_NORM_FROBENIUS));
   return 1;
 }
 
@@ -468,7 +490,8 @@ static int Ravi_matrix_mult(lua_State *L) {
   luaL_argcheck(L, A->n == B->m, 1, "matrices are not multiplicable");
   ravi_matrix_t *C = alloc_Ravi_matrix(L, A->m, B->n, 0.0);
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
-  ops->multiply(A->m, A->n, A->data, B->m, B->n, B->data, C->m, C->n, C->data, false, false, 1.0, 0.0);
+  ops->multiply(A->m, A->n, A->data, B->m, B->n, B->data, C->m, C->n, C->data,
+                false, false, 1.0, 0.0);
   return 1;
 }
 
@@ -501,6 +524,25 @@ static int Ravi_matrix_copy(lua_State *L) {
   ravi_matrix_t *matrix = alloc_Ravi_matrix(L, A->m, A->n, 0.0);
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
   ops->copy(matrix, A);
+  return 1;
+}
+
+static int Ravi_matrix_norm1(lua_State *L) {
+  ravi_matrix_t *A = check_Ravi_matrix(L, 1);
+  const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
+  lua_pushnumber(L, ops->norm(A->m, A->n, A->data, RAVI_MATRIX_NORM_ONE));
+  return 1;
+}
+static int Ravi_matrix_normI(lua_State *L) {
+  ravi_matrix_t *A = check_Ravi_matrix(L, 1);
+  const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
+  lua_pushnumber(L, ops->norm(A->m, A->n, A->data, RAVI_MATRIX_NORM_INFINITY));
+  return 1;
+}
+static int Ravi_matrix_normF(lua_State *L) {
+  ravi_matrix_t *A = check_Ravi_matrix(L, 1);
+  const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
+  lua_pushnumber(L, ops->norm(A->m, A->n, A->data, RAVI_MATRIX_NORM_FROBENIUS));
   return 1;
 }
 
@@ -573,6 +615,9 @@ static const struct luaL_Reg mylib[] = {{"vector", make_Lua_vector},
                                         {"inverse", Lua_matrix_inverse},
                                         {"transpose", Lua_matrix_transpose},
                                         {"dim", Lua_matrix_dimensions},
+                                        {"norm1", Lua_matrix_norm1},
+                                        {"normI", Lua_matrix_normI},
+                                        {"normF", Lua_matrix_normF},
 
 #if RAVI_ENABLED
                                         {"vectorR", make_Ravi_vector},
@@ -582,18 +627,19 @@ static const struct luaL_Reg mylib[] = {{"vector", make_Lua_vector},
                                         {"inverseR", Ravi_matrix_inverse},
                                         {"transposeR", Ravi_matrix_transpose},
                                         {"dimR", Ravi_matrix_dimensions},
+                                        {"norm1R", Ravi_matrix_norm1},
+                                        {"normIR", Ravi_matrix_normI},
+                                        {"normFR", Ravi_matrix_normF},
 #endif
                                         {NULL, NULL}};
 
 static const ravi_matrix_lua_api_t userdata_api = {
-  test_Lua_matrix, check_Lua_matrix, alloc_Lua_matrix
-};
+    test_Lua_matrix, check_Lua_matrix, alloc_Lua_matrix};
 
 #if RAVI_ENABLED
 
 static const ravi_matrix_lua_api_t ravi_array_api = {
-  test_Ravi_matrix, check_Ravi_matrix, alloc_Ravi_matrix
-};
+    test_Ravi_matrix, check_Ravi_matrix, alloc_Ravi_matrix};
 
 #endif
 

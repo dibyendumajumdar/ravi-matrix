@@ -245,14 +245,75 @@ static void matrix_multiply(int32_t rows_A, int32_t cols_A, double *a, int32_t r
 #endif
 }
 
-static double matrix_norm1(ravi_matrix_t *A) {
-  int m = A->m;
-  int n = A->n;
-  char norm[1] = {'1'};
-  double *a = &A->data[0];
+static double matrix_norm(int32_t m, int32_t n, double *a, ravi_matrix_norm_type normType) {
+  char normt = normType == RAVI_MATRIX_NORM_ONE ? '1' :
+    (normType == RAVI_MATRIX_NORM_INFINITY ? 'i' : 'f');
   int lda = m;
   double *work = (double *)alloca(sizeof(double) * m);
-  return dlange_(&norm[0], &m, &n, a, &lda, work);
+/*
+NAME
+DLANGE - return the value of the one norm, or the Frobenius
+norm, or the infinity norm, or the element of largest abso-
+lute value of a real matrix A
+
+SYNOPSIS
+DOUBLE PRECISION FUNCTION DLANGE( NORM, M, N, A, LDA, WORK )
+
+CHARACTER    NORM
+
+INTEGER      LDA, M, N
+
+DOUBLE       PRECISION A( LDA, * ), WORK( * )
+
+PURPOSE
+DLANGE  returns the value of the one norm,  or the Frobenius
+norm, or the  infinity norm,  or the  element of  largest
+absolute value  of a real matrix A.
+
+DESCRIPTION
+DLANGE returns the value
+
+DLANGE = ( max(abs(A(i,j))), NORM = 'M' or 'm'
+(
+( norm1(A),         NORM = '1', 'O' or 'o'
+(
+( normI(A),         NORM = 'I' or 'i'
+(
+( normF(A),         NORM = 'F', 'f', 'E' or 'e'
+
+where  norm1  denotes the  one norm of a matrix (maximum
+column sum), normI  denotes the  infinity norm  of a matrix
+(maximum row sum) and normF  denotes the  Frobenius norm of
+a matrix (square root of sum of squares).  Note that
+max(abs(A(i,j)))  is not a  matrix norm.
+
+ARGUMENTS
+NORM    (input) CHARACTER*1
+Specifies the value to be returned in DLANGE as
+described above.
+
+M       (input) INTEGER
+The number of rows of the matrix A.  M >= 0.  When M
+= 0, DLANGE is set to zero.
+
+N       (input) INTEGER
+The number of columns of the matrix A.  N >= 0.
+When N = 0, DLANGE is set to zero.
+
+A       (input) DOUBLE PRECISION array, dimension (LDA,N)
+
+The m by n matrix A.
+
+LDA     (input) INTEGER
+The leading dimension of the array A.  LDA >=
+max(M,1).
+
+WORK    (workspace) DOUBLE PRECISION array, dimension (LWORK),
+where LWORK >= M when NORM = 'I'; otherwise, WORK is
+not referenced.
+
+*/
+  return dlange_(&normt, &m, &n, a, &lda, work);
 }
 
 static int matrix_lufactor(ravi_matrix_t *A) {
@@ -404,7 +465,7 @@ done:
 static bool matrix_estimate_rcond(const ravi_matrix_t *A, double *rcond) {
   bool ok = false;
   ravi_matrix_t *copy_of_A = make_copy(A);
-  double anorm = matrix_norm1(copy_of_A);
+  double anorm = matrix_norm(A->m, A->n, copy_of_A->data, RAVI_MATRIX_NORM_ONE);
   int info = matrix_lufactor(copy_of_A);
   if (info != 0) {
     fprintf(stderr, "failed to estimate rcond (LU factor failed)\n");
@@ -589,7 +650,7 @@ static void matrix_transpose(uint32_t rows, uint32_t cols, double *b, const doub
 
 /////////////////////////////////////////////////////
 
-static ravi_matrix_ops_t ops = {matrix_multiply, matrix_norm1, matrix_lufactor,
+static ravi_matrix_ops_t ops = {matrix_multiply, matrix_norm, matrix_lufactor,
                            matrix_estimate_rcond, matrix_svd, matrix_negate,
                            matrix_add, matrix_sub, matrix_copy, matrix_solve,
                            matrix_lsq_solve, matrix_inverse, matrix_transpose};

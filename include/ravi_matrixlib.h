@@ -47,6 +47,13 @@ struct ravi_matrix_t {
   double data[1];
 };
 
+enum ravi_matrix_norm_type {
+  RAVI_MATRIX_NORM_ONE,
+  RAVI_MATRIX_NORM_INFINITY,
+  RAVI_MATRIX_NORM_FROBENIUS
+};
+typedef enum ravi_matrix_norm_type ravi_matrix_norm_type;
+
 typedef struct ravi_matrix_ops_t ravi_matrix_ops_t;
 struct ravi_matrix_ops_t {
   // workhorse for matrix multiplication
@@ -63,7 +70,7 @@ struct ravi_matrix_ops_t {
                    int32_t rows_C, int32_t cols_C, double *C, bool transposeA,
                    bool transposeB, double alpha, double beta);
 
-  double (*norm1)(ravi_matrix_t *A);
+  double (*norm)(int32_t m, int32_t n, double *a, ravi_matrix_norm_type normType);
 
   int (*lufactor)(ravi_matrix_t *A);
 

@@ -422,6 +422,18 @@ static int Lua_matrix_normF(lua_State *L) {
   return 1;
 }
 
+static int Lua_matrix_lufactor(lua_State *L) {
+  ravi_matrix_t *A = check_Lua_matrix(L, 1);
+  const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
+  int32_t ipsize = A->m < A->n ? A->m : A->n;
+  int *ipiv = (int *)alloca(sizeof(int)*ipsize);
+  int info = ops->lufactor(A->m, A->n, A->data, ipsize, ipiv);
+  if (info < 0)
+    luaL_error(L, "Failed to factorize matrix: info %d", info);
+  return 0;
+}
+
+
 static int Lua_matrix_solve(lua_State *L) {
   ravi_matrix_t *A = check_Lua_matrix(L, 1);
   ravi_matrix_t *vector = check_Lua_matrix(L, 2);
@@ -546,6 +558,18 @@ static int Ravi_matrix_normF(lua_State *L) {
   return 1;
 }
 
+static int Ravi_matrix_lufactor(lua_State *L) {
+  ravi_matrix_t *A = check_Ravi_matrix(L, 1);
+  const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
+  int32_t ipsize = A->m < A->n ? A->m : A->n;
+  int *ipiv = (int *)alloca(sizeof(int)*ipsize);
+  int info = ops->lufactor(A->m, A->n, A->data, ipsize, ipiv);
+  if (info < 0)
+    luaL_error(L, "Failed to factorize matrix: info %d", info);
+  return 0;
+}
+
+
 static int Ravi_matrix_solve(lua_State *L) {
   ravi_matrix_t *A = check_Ravi_matrix(L, 1);
   ravi_matrix_t *vector = check_Ravi_matrix(L, 2);
@@ -618,7 +642,7 @@ static const struct luaL_Reg mylib[] = {{"vector", make_Lua_vector},
                                         {"norm1", Lua_matrix_norm1},
                                         {"normI", Lua_matrix_normI},
                                         {"normF", Lua_matrix_normF},
-
+                                        {"lufactor", Lua_matrix_lufactor},
 #if RAVI_ENABLED
                                         {"vectorR", make_Ravi_vector},
                                         {"matrixR", make_Ravi_matrix},
@@ -630,6 +654,7 @@ static const struct luaL_Reg mylib[] = {{"vector", make_Lua_vector},
                                         {"norm1R", Ravi_matrix_norm1},
                                         {"normIR", Ravi_matrix_normI},
                                         {"normFR", Ravi_matrix_normF},
+                                        {"lufactorR", Ravi_matrix_lufactor},
 #endif
                                         {NULL, NULL}};
 

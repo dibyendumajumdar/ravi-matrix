@@ -72,7 +72,12 @@ struct ravi_matrix_ops_t {
 
   double (*norm)(int32_t m, int32_t n, double *a, ravi_matrix_norm_type normType);
 
-  int (*lufactor)(ravi_matrix_t *A);
+  // LU Factorisation
+  // The matrix 'a' will be updated
+  // ipsize must be at least min(m,n)
+  // ipiv must be an array of size ipsize
+  // Returns 0 on success
+  int(*lufactor)(int32_t m, int32_t n, double *a, int32_t ipsize, int *ipiv);
 
   bool (*estimate_rcond)(const ravi_matrix_t *A, double *rcond);
 

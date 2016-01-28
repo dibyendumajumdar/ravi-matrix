@@ -316,18 +316,77 @@ not referenced.
   return dlange_(&normt, &m, &n, a, &lda, work);
 }
 
-static int matrix_lufactor(ravi_matrix_t *A) {
-  int m = A->m;
-  int n = A->n;
-
+static int matrix_lufactor(int32_t m, int32_t n, double *a, int32_t ipsize, int *ipiv) {
   int info = 0;
   int size = m < n ? m : n;
-  int *ipiv = (int *)alloca(sizeof(int) * size);
-  for (int i = 0; i < size; i++)
+  if (ipsize < size) {
+    info = -5;
+    goto Lerror;
+  }
+  for (int i = 0; i < ipsize; i++)
     ipiv[i] = 0;
-
   int lda = (1 < m? m: 1);
-  dgetrf_(&m, &n, &A->data[0], &lda, ipiv, &info);
+/*
+SUBROUTINE DGETRF( M, N, A, LDA, IPIV, INFO )
+*
+*  -- LAPACK routine (version 3.1) --
+*     Univ. of Tennessee, Univ. of California Berkeley and NAG Ltd..
+*     November 2006
+*
+*     .. Scalar Arguments ..
+INTEGER            INFO, LDA, M, N
+*     ..
+*     .. Array Arguments ..
+INTEGER            IPIV( * )
+DOUBLE PRECISION   A( LDA, * )
+*     ..
+*
+*  Purpose
+*  =======
+*
+*  DGETRF computes an LU factorization of a general M-by-N matrix A
+*  using partial pivoting with row interchanges.
+*
+*  The factorization has the form
+*     A = P * L * U
+*  where P is a permutation matrix, L is lower triangular with unit
+*  diagonal elements (lower trapezoidal if m > n), and U is upper
+*  triangular (upper trapezoidal if m < n).
+*
+*  This is the right-looking Level 3 BLAS version of the algorithm.
+*
+*  Arguments
+*  =========
+*
+*  M       (input) INTEGER
+*          The number of rows of the matrix A.  M >= 0.
+*
+*  N       (input) INTEGER
+*          The number of columns of the matrix A.  N >= 0.
+*
+*  A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)
+*          On entry, the M-by-N matrix to be factored.
+*          On exit, the factors L and U from the factorization
+*          A = P*L*U; the unit diagonal elements of L are not stored.
+*
+*  LDA     (input) INTEGER
+*          The leading dimension of the array A.  LDA >= max(1,M).
+*
+*  IPIV    (output) INTEGER array, dimension (min(M,N))
+*          The pivot indices; for 1 <= i <= min(M,N), row i of the
+*          matrix was interchanged with row IPIV(i).
+*
+*  INFO    (output) INTEGER
+*          = 0:  successful exit
+*          < 0:  if INFO = -i, the i-th argument had an illegal value
+*          > 0:  if INFO = i, U(i,i) is exactly zero. The factorization
+*                has been completed, but the factor U is exactly
+*                singular, and division by zero will occur if it is used
+*                to solve a system of equations.
+*
+*/
+  dgetrf_(&m, &n, a, &lda, ipiv, &info);
+Lerror:
   if (info != 0)
     fprintf(stderr, "failed LU factorization of input matrix: %d\n", info);
   return info;
@@ -466,7 +525,9 @@ static bool matrix_estimate_rcond(const ravi_matrix_t *A, double *rcond) {
   bool ok = false;
   ravi_matrix_t *copy_of_A = make_copy(A);
   double anorm = matrix_norm(A->m, A->n, copy_of_A->data, RAVI_MATRIX_NORM_ONE);
-  int info = matrix_lufactor(copy_of_A);
+  int ipsize = A->m < A->n ? A->m : A->n;
+  int *ipiv = (int *)alloca(sizeof(int)*ipsize);
+  int info = matrix_lufactor(A->m, A->n, copy_of_A->data, ipsize, ipiv);
   if (info != 0) {
     fprintf(stderr, "failed to estimate rcond (LU factor failed)\n");
     goto done;

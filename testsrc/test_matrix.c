@@ -29,7 +29,6 @@ int test_dgemm() {
   {
     bool transA = true;
     bool transB = false;
-    int order = 102;
     double alpha = -1;
     double beta = 0;
     double A[] = { -0.358, 0.224, -0.941, 0.513 };
@@ -84,7 +83,7 @@ int test_dgemm() {
   return 0;
 }
 
-int main(int argc, const char *argv[]) {
+int main(void) {
   int rc = test_dgemm();
 	return rc != 0 ? 1 : 0;
 }

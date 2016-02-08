@@ -108,7 +108,7 @@ struct ravi_matrix_ops_t {
   bool (*inverse)(ravi_matrix_t *A);
 
   // transposed must be size nxm where original is sized mxn
-  void(*transpose)(uint32_t rows, uint32_t cols, double *b, const double *a);
+  void(*transpose)(int32_t rows, int32_t cols, double *b, const double *a);
 };
 
 RAVIMATRIX_API const ravi_matrix_ops_t *ravi_matrix_get_implementation();

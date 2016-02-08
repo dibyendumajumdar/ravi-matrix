@@ -672,7 +672,7 @@ static bool matrix_inverse(ravi_matrix_t *a) {
   return true;
 }
 
-static void matrix_transpose(uint32_t rows, uint32_t cols, double *b, const double *a) {
+static void matrix_transpose(int32_t rows, int32_t cols, double *b, const double *a) {
 #if USE_OPENBLAS
   double scale = 1.0;
   int lda = max(1, rows);

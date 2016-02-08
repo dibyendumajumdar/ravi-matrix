@@ -79,6 +79,9 @@ struct ravi_matrix_ops_t {
   // Returns 0 on success
   int(*lufactor)(int32_t m, int32_t n, double *a, int32_t ipsize, int *ipiv);
 
+  // A = A + alpha*B
+  void(*add)(int32_t rows, int32_t cols, double *A, const double *B, double alpha);
+
   bool (*estimate_rcond)(const ravi_matrix_t *A, double *rcond);
 
   // SVD
@@ -89,12 +92,6 @@ struct ravi_matrix_ops_t {
 
   // A = -A
   void (*negate)(ravi_matrix_t *A);
-
-  // A += B
-  bool (*add)(ravi_matrix_t *A, const ravi_matrix_t *B);
-
-  // A -= B
-  bool (*sub)(ravi_matrix_t *A, const ravi_matrix_t *B);
 
   // A = copy(B)
   void (*copy)(ravi_matrix_t *A, const ravi_matrix_t *B);

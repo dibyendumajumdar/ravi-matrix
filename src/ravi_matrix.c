@@ -379,7 +379,7 @@ static int Lua_matrix_add(lua_State *L) {
   ravi_matrix_t *matrix = alloc_Lua_matrix(L, A->m, B->n, 0.0);
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
   ops->copy(matrix, A);
-  ops->add(matrix, B);
+  ops->add(matrix->m, matrix->n, matrix->data, B->data, 1.0);
   return 1;
 }
 
@@ -391,7 +391,7 @@ static int Lua_matrix_sub(lua_State *L) {
   ravi_matrix_t *matrix = alloc_Lua_matrix(L, A->m, B->n, 0.0);
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
   ops->copy(matrix, A);
-  ops->sub(matrix, B);
+  ops->add(matrix->m, matrix->n, matrix->data, B->data, -1.0);
   return 1;
 }
 
@@ -515,7 +515,7 @@ static int Ravi_matrix_add(lua_State *L) {
   ravi_matrix_t *matrix = alloc_Ravi_matrix(L, A->m, B->n, 0.0);
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
   ops->copy(matrix, A);
-  ops->add(matrix, B);
+  ops->add(matrix->m, matrix->n, matrix->data, B->data, 1.0);
   return 1;
 }
 
@@ -527,7 +527,7 @@ static int Ravi_matrix_sub(lua_State *L) {
   ravi_matrix_t *matrix = alloc_Ravi_matrix(L, A->m, B->n, 0.0);
   const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
   ops->copy(matrix, A);
-  ops->sub(matrix, B);
+  ops->add(matrix->m, matrix->n, matrix->data, B->data, -1.0);
   return 1;
 }
 

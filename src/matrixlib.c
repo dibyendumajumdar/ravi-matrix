@@ -398,34 +398,17 @@ static void matrix_negate(ravi_matrix_t *A) {
     *p = -*p;
 }
 
-static bool matrix_add(ravi_matrix_t *A, const ravi_matrix_t *B) {
-  if (A->m != B->m || A->n != B->n) {
-    fprintf(stderr,
-            "Matrix addition failed as matrices are not the same size\n");
-    assert(false);
-    return false;
-  }
-  const double *e = &A->data[A->m * A->n];
-  double *p = &A->data[0];
-  const double *q = &B->data[0];
-  for (; p != e; p++, q++)
-    *p += *q;
-  return true;
-}
 
-static bool matrix_sub(ravi_matrix_t *A, const ravi_matrix_t *B) {
-  if (A->m != B->m || A->n != B->n) {
-    fprintf(stderr,
-            "Matrix subtraction failed as matrices are not the same size\n");
-    assert(false);
-    return false;
-  }
-  const double *e = &A->data[A->m * A->n];
-  double *p = &A->data[0];
-  const double *q = &B->data[0];
+static void matrix_add(int32_t rows, int32_t cols, double *A, const double *B, double alpha) {
+#if defined(__APPLE__) || defined(USE_OPENBLAS)
+  cblas_daxpy(rows*cols, alpha, B, 1, A, 1);
+#else
+  const double *e = A + (rows*cols);
+  double *p = A;
+  const double *q = B;
   for (; p != e; p++, q++)
-    *p -= *q;
-  return true;
+    *p += alpha*(*q);
+#endif
 }
 
 // Copy B into A
@@ -711,9 +694,9 @@ static void matrix_transpose(uint32_t rows, uint32_t cols, double *b, const doub
 
 /////////////////////////////////////////////////////
 
-static ravi_matrix_ops_t ops = {matrix_multiply, matrix_norm, matrix_lufactor,
+static ravi_matrix_ops_t ops = {matrix_multiply, matrix_norm, matrix_lufactor, matrix_add,
                            matrix_estimate_rcond, matrix_svd, matrix_negate,
-                           matrix_add, matrix_sub, matrix_copy, matrix_solve,
+                           matrix_copy, matrix_solve,
                            matrix_lsq_solve, matrix_inverse, matrix_transpose};
 
 const ravi_matrix_ops_t *ravi_matrix_get_implementation() { return &ops; }

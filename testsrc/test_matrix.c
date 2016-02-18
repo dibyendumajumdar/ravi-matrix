@@ -83,7 +83,48 @@ int test_dgemm() {
   return 0;
 }
 
+int test_outer_product() {
+  double x[5] = { 1, 2, 3, 4, 5 };
+  double y[5] = { 6, 7, 8, 9, 10 };
+  double A[25] = { 0 };
+  double expected[25] = {
+    6.0, 12.0, 18.0, 24.0, 30.0,
+    7.0, 14.0, 21.0, 28.0, 35.0,
+    8.0, 16.0, 24.0, 32.0, 40.0,
+    9.0, 18.0, 27.0, 36.0, 45.0,
+    10.0, 20.0, 30.0, 40.0, 50.0
+  };
+  const ravi_matrix_ops_t *ops = ravi_matrix_get_implementation();
+  ops->vector_outer_product(5, x, 5, y, A, 1.0);
+  for (int i = 0; i < 25; i++) {
+    if (expected[i] != A[i]) {
+      fprintf(stderr, "mismatch at %d\n", i);
+      return 1;
+    }
+  }
+
+  double z1[2] = { 71, 1 };
+  double z2[2] = { 0, 45 };
+  double M[4] = { 0 };
+  ops->vector_outer_product(2, z1, 2, z2, M, 1.0);
+  double expected2[4] = { 
+    0.0, 0.0,
+    3195.0, 45.0
+  };
+  for (int i = 0; i < 4; i++) {
+    if (expected2[i] != M[i]) {
+      fprintf(stderr, "mismatch at %d in matrix M\n", i);
+      return 1;
+    }
+  }
+
+  printf("outer_product OK\n");
+  return 0;
+}
+
+
 int main(void) {
   int rc = test_dgemm();
+  rc += test_outer_product();
 	return rc != 0 ? 1 : 0;
 }

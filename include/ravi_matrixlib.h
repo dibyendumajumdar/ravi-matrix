@@ -90,8 +90,8 @@ struct ravi_matrix_ops_t {
   // V must be matrix n x n
   bool (*svd)(const ravi_matrix_t *A, ravi_matrix_t *S, ravi_matrix_t *U, ravi_matrix_t *V);
 
-  // A = -A
-  void (*negate)(ravi_matrix_t *A);
+  // A = A*scalar
+  void (*scalar_multiply)(int32_t rows, int32_t cols, double *A, double scalar);
 
   // A = copy(B)
   void (*copy)(ravi_matrix_t *A, const ravi_matrix_t *B);
@@ -109,6 +109,8 @@ struct ravi_matrix_ops_t {
 
   // transposed must be size nxm where original is sized mxn
   void(*transpose)(int32_t rows, int32_t cols, double *b, const double *a);
+
+  void (*vector_outer_product)(int32_t m, const double *x, int32_t n, const double *y, double *a, double alpha);
 };
 
 RAVIMATRIX_API const ravi_matrix_ops_t *ravi_matrix_get_implementation();

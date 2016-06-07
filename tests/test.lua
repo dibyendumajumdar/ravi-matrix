@@ -1,3 +1,5 @@
+print(package.path)
+print(package.cpath)
 t=require 'ravimatrix'
 
 v=t.vector(0)

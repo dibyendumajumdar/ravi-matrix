@@ -3,21 +3,21 @@ print(package.cpath)
 t=require 'ravimatrix'
 
 v=t.vector(0)
-assert(getmetatable(v).type == "Lua matrix")
+assert(getmetatable(v).__name == "LuaMatrix")
 assert(#v == 0)
 
 v=t.vectorR(0)
-assert(getmetatable(v).type == "Ravi matrix")
+assert(getmetatable(v).__name == "RaviMatrix")
 assert(#v == 0)
 
 v=t.vector(2, 2.0)
-assert(getmetatable(v).type == "Lua matrix")
+assert(getmetatable(v).__name == "LuaMatrix")
 assert(#v == 2)
 assert(v[1] == 2.0)
 assert(v[2] == 2.0)
 
 v=t.vectorR(2, 2.1)
-assert(getmetatable(v).type == "Ravi matrix")
+assert(getmetatable(v).__name == "RaviMatrix")
 assert(#v == 2)
 assert(v[1] == 2.1)
 assert(v[2] == 2.1)
@@ -46,7 +46,7 @@ assert(c[1] == 10.0)
 -- 18 60 32
 local m: number[] = { 76,27,18; 25,89,60; 11,51,32 }
 A = t.matrixR(3,3,m)
-assert(getmetatable(m).type == "Ravi matrix")
+assert(getmetatable(m).__name == "RaviMatrix")
 
 -- 3*1 matrix bx
 -- 10
@@ -54,7 +54,7 @@ assert(getmetatable(m).type == "Ravi matrix")
 -- 43
 local m: number[] = { 10, 7, 43 }
 bx = t.vectorR(m)
-assert(getmetatable(m).type == "Ravi matrix")
+assert(getmetatable(m).__name == "RaviMatrix")
 
 C = A*bx;
 assert(#C == 3)

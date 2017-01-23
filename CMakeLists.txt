@@ -18,7 +18,6 @@ if (NOT WIN32)
   find_package(LAPACK REQUIRED)
 endif()
 find_package(RAVI REQUIRED)
-find_package(RaviLuaUTILS REQUIRED)
 
 message( STATUS "LAPACK_LINKER_FLAGS   : " ${LAPACK_LINKER_FLAGS} )
 message( STATUS "LAPACK_LIBRARIES      : " ${LAPACK_LIBRARIES} )
@@ -98,7 +97,6 @@ endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
 include_directories("${LUA_INCLUDE_DIRS}")
-include_directories("${RAVILUAUTILS_INCLUDE_DIRS}")
 if (APPLE)
   include_directories("/System/Library/Frameworks")
 endif()
@@ -131,7 +129,7 @@ add_library(ravimatrix SHARED
 set_target_properties(ravimatrix 
   PROPERTIES DEFINE_SYMBOL "RAVIMATRIX_IMPLEMENTATION")
 target_link_libraries(ravimatrix ${LAPACK_LIBRARIES} ${LUA_LIBRARIES} 
-  ${OPENBLAS_LIBRARIES} ${RAVILUAUTILS_LIBRARIES}) 
+  ${OPENBLAS_LIBRARIES}) 
 
 install(FILES ${RAVIMATRIX_HEADERS} 
         DESTINATION include/ravi)

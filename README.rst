@@ -131,6 +131,57 @@ The Ravi API is not compatible with Lua as it requires the use of number arrays.
 
     local A: number[] = matrix.matrixR { {76,27,18}, {25,89,60}, {11,51,32} }
 
+Matrix operations
+-----------------
+
+The implementation provides metamethods __add, __sub and __mul allowing matrix additions, multiplications and subtractions to be
+performed using a natural syntax.
+
+Additionally following functions are provided.
+
+*matrix.transpose(A)*
+  Returns a transpose of A.
+
+*matrix.inverse(A)*
+  Returns inverse of A
+
+*matrix.norm1(A)*
+  Returns one norm of matrix (maximum column sum)
+
+*matrix.normI(A)*
+  Returns infinity norm of matrix (maximum row sum)
+
+*matrix.formF(A)*
+  Returns Frobenius norm of matrix (square root of sum of squares)
+
+*matrix.lufactor(A)*
+  Returns the LU factor of A
+
+*matrix.solve(A,b,'L')
+  Solves Ax = b using LU decomposition
+
+*matrix.solve(A,b,'Q')
+  computes the minimum-norm solution to a real linear least squares problem::
+
+    minimize || A * X - B ||
+
+  using a complete orthogonal factorization of A.  A is an M-by-N matrix which may be rank-deficient.
+
+*matrix.solve(A,b,'S')
+  Computes the minimum-norm solution to a real linear least squares problem::
+
+     minimize 2-norm(| b - A*x |)
+
+  using the singular value decomposition (SVD) of A. A is an M-by-N matrix which may be rank-deficient.  
+
+
+For each of above the Ravi alternatives are provided (names end in 'R').
+
+Example
+-------
+
+For example usage see `test.lua <https://github.com/dibyendumajumdar/ravi-matrix/blob/master/tests/test.lua>`_.
+
 Building on Windows
 -------------------
 

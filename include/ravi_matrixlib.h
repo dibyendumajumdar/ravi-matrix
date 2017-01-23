@@ -36,12 +36,6 @@
 extern "C" {
 #endif
 
-typedef struct ravi_vector_t ravi_vector_;
-struct ravi_vector_t {
-  int32_t n; /* columns */
-  double* data;
-};
-
 typedef struct ravi_matrix_t ravi_matrix_t;
 struct ravi_matrix_t {
   int32_t m; /* rows */
